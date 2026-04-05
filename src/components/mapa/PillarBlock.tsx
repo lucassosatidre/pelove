@@ -70,8 +70,7 @@ export function SortablePillarBlock({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
           <div className="flex-1">
-            <span className="text-[10px] font-bold text-primary uppercase tracking-wide">Pilar {pillar.number}</span>
-            <InlineText value={pillar.name} onSave={(v) => onUpdatePillar(pillar.id, v)} className="text-xs font-semibold block mt-0.5" />
+            <InlineText value={pillar.name} onSave={(v) => onUpdatePillar(pillar.id, v)} className="text-xs font-semibold block" />
           </div>
         </div>
       </div>
