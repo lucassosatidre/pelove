@@ -348,7 +348,7 @@ export function MindMapLayout() {
                 <div className="min-w-[180px]">
                   <InlineText
                     value=""
-                    onSave={(v) => { addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
+                    onSave={async (v) => { await addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
                     placeholder="Descrição..."
                     autoFocus
                     className="text-xs"
