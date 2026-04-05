@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Pillar, Obstacle, Action, ActionStatus } from "@/hooks/useStrategicData";
+import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
 
 // ─── Connector SVG ───
 function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
