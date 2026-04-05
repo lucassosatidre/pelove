@@ -324,7 +324,7 @@ export function MindMapLayout() {
           </DndContext>
           {newPillar ? (
             <div className="min-w-[160px]">
-              <InlineText value="" onSave={(v) => { addPillar(v); setNewPillar(false); }} placeholder="Nome do pilar..." autoFocus className="text-xs font-semibold" />
+              <InlineText value="" onSave={async (v) => { await addPillar(v); setNewPillar(false); }} placeholder="Nome do pilar..." autoFocus className="text-xs font-semibold" />
             </div>
           ) : (
             <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7 gap-1 self-start" onClick={() => setNewPillar(true)}>
