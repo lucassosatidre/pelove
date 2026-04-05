@@ -1,4 +1,4 @@
-import { Map, Settings, LogOut } from "lucide-react";
+import { Map, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +16,6 @@ import {
 
 const menuItems = [
   { title: "Mapa Estratégico", url: "/mapa", icon: Map },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {

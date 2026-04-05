@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import MapaEstrategico from "./pages/MapaEstrategico";
-import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +22,6 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route element={<AppLayout />}>
               <Route path="/mapa" element={<MapaEstrategico />} />
-              <Route path="/configuracoes" element={<Configuracoes />} />
             </Route>
             <Route path="/" element={<Navigate to="/mapa" replace />} />
             <Route path="*" element={<NotFound />} />
