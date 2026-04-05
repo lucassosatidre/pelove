@@ -100,10 +100,11 @@ export function useStrategicMap() {
 
 export function getComputedStatus(action: Action): string {
   const today = new Date().toISOString().split("T")[0];
-  if (action.status === "concluido") return "concluido";
-  if (action.deadline && action.deadline < today && action.status !== "concluido") return "atrasado";
-  if (action.status === "em_andamento") return "em_andamento";
-  if (action.status === "agendado" || (action.deadline && action.deadline > today && action.status === "nao_iniciado")) return "agendado";
+  const status = action.status as string;
+  if (status === "concluido") return "concluido";
+  if (action.deadline && action.deadline < today && status !== "concluido") return "atrasado";
+  if (status === "em_andamento") return "em_andamento";
+  if (status === "agendado" || (action.deadline && action.deadline > today && status === "nao_iniciado")) return "agendado";
   return "nao_iniciado";
 }
 

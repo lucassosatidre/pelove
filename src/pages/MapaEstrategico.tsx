@@ -206,7 +206,7 @@ export default function MapaEstrategico() {
                             className="w-full flex items-center justify-between text-left"
                             onClick={() => {
                               const next = new Set(expandedObstacles);
-                              obsExpanded ? next.delete(obs.id) : next.add(obs.id);
+                              if (obsExpanded) { next.delete(obs.id); } else { next.add(obs.id); }
                               setExpandedObstacles(next);
                             }}
                           >
