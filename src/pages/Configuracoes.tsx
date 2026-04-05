@@ -128,12 +128,14 @@ export default function Configuracoes() {
 
   const deleteAction = async (id: string) => {
     const { error } = await supabase.from("actions").delete().eq("id", id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
       toast({ title: "Ação removida!" });
       queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
     }
   };
+  void deleteAction;
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
