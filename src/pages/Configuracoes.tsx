@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Pencil, Check, X } from "lucide-react";
 
 export default function Configuracoes() {
   const { data: vision } = useVision();
@@ -18,122 +18,100 @@ export default function Configuracoes() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Vision state
   const [visionText, setVisionText] = useState("");
   const [visionYear, setVisionYear] = useState(2027);
 
   useEffect(() => {
-    if (vision) {
-      setVisionText(vision.text);
-      setVisionYear(vision.reference_year);
-    }
+    if (vision) { setVisionText(vision.text); setVisionYear(vision.reference_year); }
   }, [vision]);
 
   const saveVision = async () => {
     if (!vision) return;
     const { error } = await supabase.from("vision").update({ text: visionText, reference_year: visionYear }).eq("id", vision.id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Visão atualizada!" });
-      queryClient.invalidateQueries({ queryKey: ["vision"] });
-    }
+    else { toast({ title: "Visão atualizada!" }); queryClient.invalidateQueries({ queryKey: ["vision"] }); }
   };
 
-  // Pillar CRUD
+  // Pillar CRUD + inline edit
   const [newPillarName, setNewPillarName] = useState("");
+  const [editingPillarId, setEditingPillarId] = useState<string | null>(null);
+  const [editingPillarName, setEditingPillarName] = useState("");
+
   const addPillar = async () => {
     if (!newPillarName.trim()) return;
     const maxOrder = pillars ? Math.max(...pillars.map((p) => p.display_order), 0) : 0;
     const maxNumber = pillars ? Math.max(...pillars.map((p) => p.number), 0) : 0;
     const { error } = await supabase.from("pillars").insert({ name: newPillarName, number: maxNumber + 1, display_order: maxOrder + 1 });
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Pilar adicionado!" });
-      setNewPillarName("");
-      queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
-    }
+    else { toast({ title: "Pilar adicionado!" }); setNewPillarName(""); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
+  };
+
+  const savePillarName = async (id: string) => {
+    if (!editingPillarName.trim()) return;
+    const { error } = await supabase.from("pillars").update({ name: editingPillarName }).eq("id", id);
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    else { toast({ title: "Pilar atualizado!" }); setEditingPillarId(null); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
   };
 
   const deletePillar = async (id: string) => {
     const { error } = await supabase.from("pillars").delete().eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Pilar removido!" });
-      queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
-    }
+    else { toast({ title: "Pilar removido!" }); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
   };
 
-  // Obstacle CRUD
+  // Obstacle CRUD + inline edit
   const [newObstacle, setNewObstacle] = useState<{ pillarId: string; code: string; description: string } | null>(null);
+  const [editingObstacleId, setEditingObstacleId] = useState<string | null>(null);
+  const [editingObstacleDesc, setEditingObstacleDesc] = useState("");
+
   const addObstacle = async () => {
     if (!newObstacle || !newObstacle.code.trim()) return;
     const pillar = pillars?.find((p) => p.id === newObstacle.pillarId);
     const maxOrder = pillar ? Math.max(...pillar.obstacles.map((o) => o.display_order), 0) : 0;
     const { error } = await supabase.from("obstacles").insert({
-      pillar_id: newObstacle.pillarId,
-      code: newObstacle.code,
-      description: newObstacle.description || null,
-      display_order: maxOrder + 1,
+      pillar_id: newObstacle.pillarId, code: newObstacle.code,
+      description: newObstacle.description || null, display_order: maxOrder + 1,
     });
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Obstáculo adicionado!" });
-      setNewObstacle(null);
-      queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
-    }
+    else { toast({ title: "Obstáculo adicionado!" }); setNewObstacle(null); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
+  };
+
+  const saveObstacleDesc = async (id: string) => {
+    const { error } = await supabase.from("obstacles").update({ description: editingObstacleDesc || null }).eq("id", id);
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    else { toast({ title: "Obstáculo atualizado!" }); setEditingObstacleId(null); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
   };
 
   const deleteObstacle = async (id: string) => {
     const { error } = await supabase.from("obstacles").delete().eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Obstáculo removido!" });
-      queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
-    }
+    else { toast({ title: "Obstáculo removido!" }); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
   };
 
   // Action CRUD
   const [newAction, setNewAction] = useState<{
-    obstacleId: string;
-    description: string;
-    area: string;
-    responsible: string;
-    deadline: string;
-    status: string;
-    importance: string;
-    urgency: string;
-    reliability: string;
+    obstacleId: string; description: string; area: string; responsible: string;
+    deadline: string; status: string; importance: string; urgency: string; reliability: string;
   } | null>(null);
 
   const addAction = async () => {
     if (!newAction || !newAction.description.trim()) return;
     const { error } = await supabase.from("actions").insert({
-      obstacle_id: newAction.obstacleId,
-      description: newAction.description,
-      area: newAction.area || null,
-      responsible: newAction.responsible || null,
-      deadline: newAction.deadline || null,
-      status: newAction.status || "nao_iniciado",
+      obstacle_id: newAction.obstacleId, description: newAction.description,
+      area: newAction.area || null, responsible: newAction.responsible || null,
+      deadline: newAction.deadline || null, status: newAction.status || "nao_iniciado",
       importance: newAction.importance ? Number(newAction.importance) : null,
       urgency: newAction.urgency ? Number(newAction.urgency) : null,
       reliability: newAction.reliability ? Number(newAction.reliability) : null,
     });
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Ação adicionada!" });
-      setNewAction(null);
-      queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
-    }
+    else { toast({ title: "Ação adicionada!" }); setNewAction(null); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
   };
 
   const deleteAction = async (id: string) => {
     const { error } = await supabase.from("actions").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Ação removida!" });
-      queryClient.invalidateQueries({ queryKey: ["strategic-map"] });
-    }
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    else { toast({ title: "Ação removida!" }); queryClient.invalidateQueries({ queryKey: ["strategic-map"] }); }
   };
   void deleteAction;
 
@@ -143,9 +121,7 @@ export default function Configuracoes() {
 
       {/* Vision */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Visão</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-lg">Visão</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Texto da Visão</Label>
@@ -172,25 +148,68 @@ export default function Configuracoes() {
           {pillars?.map((pillar) => (
             <div key={pillar.id} className="border border-border rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-foreground">Pilar {pillar.number} — {pillar.name}</span>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                  {editingPillarId === pillar.id ? (
+                    <div className="flex items-center gap-1 flex-1">
+                      <span className="font-medium text-foreground shrink-0">Pilar {pillar.number} —</span>
+                      <Input
+                        value={editingPillarName}
+                        onChange={(e) => setEditingPillarName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && savePillarName(pillar.id)}
+                        className="h-7 text-sm flex-1"
+                        autoFocus
+                      />
+                      <Button variant="ghost" size="sm" onClick={() => savePillarName(pillar.id)}><Check className="h-3 w-3 text-status-completed" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingPillarId(null)}><X className="h-3 w-3" /></Button>
+                    </div>
+                  ) : (
+                    <span className="font-medium text-foreground">Pilar {pillar.number} — {pillar.name}</span>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => deletePillar(pillar.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {editingPillarId !== pillar.id && (
+                    <Button variant="ghost" size="sm" onClick={() => { setEditingPillarId(pillar.id); setEditingPillarName(pillar.name); }}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => deletePillar(pillar.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
               </div>
 
               {/* Obstacles */}
               <div className="pl-6 space-y-2">
                 {pillar.obstacles.map((obs) => (
                   <div key={obs.id} className="flex items-center justify-between border border-border rounded p-2">
-                    <div className="flex-1">
-                      <span className="font-medium text-sm text-foreground">{obs.code}</span>
-                      {obs.description && <span className="text-sm text-muted-foreground ml-2">— {obs.description}</span>}
-                      <span className="text-xs text-muted-foreground ml-2">({obs.actions.length} ações)</span>
+                    <div className="flex-1 min-w-0">
+                      {editingObstacleId === obs.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-sm text-foreground shrink-0">{obs.code} —</span>
+                          <Input
+                            value={editingObstacleDesc}
+                            onChange={(e) => setEditingObstacleDesc(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && saveObstacleDesc(obs.id)}
+                            className="h-7 text-sm flex-1"
+                            placeholder="Descrição"
+                            autoFocus
+                          />
+                          <Button variant="ghost" size="sm" onClick={() => saveObstacleDesc(obs.id)}><Check className="h-3 w-3 text-status-completed" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => setEditingObstacleId(null)}><X className="h-3 w-3" /></Button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="font-medium text-sm text-foreground">{obs.code}</span>
+                          {obs.description && <span className="text-sm text-muted-foreground ml-2">— {obs.description}</span>}
+                          <span className="text-xs text-muted-foreground ml-2">({obs.actions.length} ações)</span>
+                        </>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
+                      {editingObstacleId !== obs.id && (
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingObstacleId(obs.id); setEditingObstacleDesc(obs.description ?? ""); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="sm" onClick={() => setNewAction({
@@ -212,62 +231,31 @@ export default function Configuracoes() {
                                 <Label>Área</Label>
                                 <Select value={newAction.area} onValueChange={(v) => setNewAction({ ...newAction, area: v })}>
                                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                  <SelectContent>
-                                    {AREA_OPTIONS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                                  </SelectContent>
+                                  <SelectContent>{AREA_OPTIONS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                                 </Select>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
-                                <div className="space-y-1">
-                                  <Label>Responsável</Label>
-                                  <Input value={newAction.responsible} onChange={(e) => setNewAction({ ...newAction, responsible: e.target.value })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label>Prazo</Label>
-                                  <Input type="date" value={newAction.deadline} onChange={(e) => setNewAction({ ...newAction, deadline: e.target.value })} />
-                                </div>
+                                <div className="space-y-1"><Label>Responsável</Label><Input value={newAction.responsible} onChange={(e) => setNewAction({ ...newAction, responsible: e.target.value })} /></div>
+                                <div className="space-y-1"><Label>Prazo</Label><Input type="date" value={newAction.deadline} onChange={(e) => setNewAction({ ...newAction, deadline: e.target.value })} /></div>
                               </div>
                               <div className="grid grid-cols-3 gap-2">
-                                <div className="space-y-1">
-                                  <Label>Importância</Label>
-                                  <Input type="number" min={1} max={5} value={newAction.importance} onChange={(e) => setNewAction({ ...newAction, importance: e.target.value })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label>Urgência</Label>
-                                  <Input type="number" min={1} max={5} value={newAction.urgency} onChange={(e) => setNewAction({ ...newAction, urgency: e.target.value })} />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label>Confiabilidade</Label>
-                                  <Input type="number" min={1} max={5} value={newAction.reliability} onChange={(e) => setNewAction({ ...newAction, reliability: e.target.value })} />
-                                </div>
+                                <div className="space-y-1"><Label>Importância</Label><Input type="number" min={1} max={5} value={newAction.importance} onChange={(e) => setNewAction({ ...newAction, importance: e.target.value })} /></div>
+                                <div className="space-y-1"><Label>Urgência</Label><Input type="number" min={1} max={5} value={newAction.urgency} onChange={(e) => setNewAction({ ...newAction, urgency: e.target.value })} /></div>
+                                <div className="space-y-1"><Label>Confiabilidade</Label><Input type="number" min={1} max={5} value={newAction.reliability} onChange={(e) => setNewAction({ ...newAction, reliability: e.target.value })} /></div>
                               </div>
                               <Button className="w-full" onClick={addAction}>Adicionar Ação</Button>
                             </div>
                           )}
                         </DialogContent>
                       </Dialog>
-                      <Button variant="ghost" size="sm" onClick={() => deleteObstacle(obs.id)}>
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteObstacle(obs.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                     </div>
                   </div>
                 ))}
                 <div className="flex items-center gap-2 mt-2">
-                  <Input
-                    placeholder="Código (ex: 1.5)"
-                    className="w-28"
-                    value={newObstacle?.pillarId === pillar.id ? newObstacle.code : ""}
-                    onChange={(e) => setNewObstacle({ pillarId: pillar.id, code: e.target.value, description: newObstacle?.description ?? "" })}
-                  />
-                  <Input
-                    placeholder="Descrição (opcional)"
-                    className="flex-1"
-                    value={newObstacle?.pillarId === pillar.id ? newObstacle.description : ""}
-                    onChange={(e) => setNewObstacle({ pillarId: pillar.id, code: newObstacle?.code ?? "", description: e.target.value })}
-                  />
-                  <Button size="sm" variant="outline" onClick={addObstacle} disabled={!newObstacle || newObstacle.pillarId !== pillar.id}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
+                  <Input placeholder="Código (ex: 1.5)" className="w-28" value={newObstacle?.pillarId === pillar.id ? newObstacle.code : ""} onChange={(e) => setNewObstacle({ pillarId: pillar.id, code: e.target.value, description: newObstacle?.description ?? "" })} />
+                  <Input placeholder="Descrição (opcional)" className="flex-1" value={newObstacle?.pillarId === pillar.id ? newObstacle.description : ""} onChange={(e) => setNewObstacle({ pillarId: pillar.id, code: newObstacle?.code ?? "", description: e.target.value })} />
+                  <Button size="sm" variant="outline" onClick={addObstacle} disabled={!newObstacle || newObstacle.pillarId !== pillar.id}><Plus className="h-3 w-3" /></Button>
                 </div>
               </div>
             </div>
