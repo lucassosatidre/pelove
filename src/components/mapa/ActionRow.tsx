@@ -43,9 +43,8 @@ export function SortableActionRow({ action, onUpdate }: ActionRowProps) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className={cn("grid border-b border-border", isDragging && "opacity-50 shadow-lg z-10 relative", bg)}
       style={{ ...style, gridTemplateColumns: ACTION_COLS }}
+      className={cn("grid border-b border-border", isDragging && "opacity-50 shadow-lg z-10 relative", bg)}
     >
       {/* Ação */}
       <div className="border-r border-border px-2 py-1.5 flex items-center gap-1.5">
