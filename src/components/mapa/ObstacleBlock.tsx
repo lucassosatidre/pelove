@@ -49,15 +49,10 @@ export function SortableObstacleBlock({ obstacle, onUpdate, onUpdateAction, onAd
           </button>
           <div className="flex-1">
             <InlineText
-              value={obstacle.code}
-              onSave={(v) => onUpdate(obstacle.id, "code", v)}
-              className="text-xs font-bold text-primary"
-            />
-            <InlineText
               value={obstacle.description ?? ""}
               onSave={(v) => onUpdate(obstacle.id, "description", v)}
               placeholder="Clique para definir"
-              className="text-xs block mt-0.5"
+              className="text-xs block"
             />
           </div>
         </div>
