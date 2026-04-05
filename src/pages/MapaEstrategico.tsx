@@ -1,11 +1,9 @@
-import { VisionHeader } from "@/components/mapa/VisionHeader";
-import { MapTable } from "@/components/mapa/MapTable";
+import { MindMapLayout } from "@/components/mapa/MindMapLayout";
 
 export default function MapaEstrategico() {
   return (
     <div className="flex flex-col h-full">
-      <VisionHeader />
-      <MapTable />
+      <MindMapLayout />
     </div>
   );
 }
