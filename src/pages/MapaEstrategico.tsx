@@ -177,7 +177,7 @@ export default function MapaEstrategico() {
                   className="w-full flex items-center justify-between text-left"
                   onClick={() => {
                     const next = new Set(expandedPillars);
-                    isExpanded ? next.delete(pillar.id) : next.add(pillar.id);
+                    if (isExpanded) { next.delete(pillar.id); } else { next.add(pillar.id); }
                     setExpandedPillars(next);
                   }}
                 >
