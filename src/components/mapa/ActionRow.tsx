@@ -5,7 +5,7 @@ import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./InlineText";
 import { StatusSelect, getRowBg, getStatusDot } from "./StatusSelect";
-import { getComputedStatus, type Action, type ActionStatus } from "@/hooks/useStrategicData";
+import { getComputedStatus, type Action } from "@/hooks/useStrategicData";
 
 const ACTION_COLS = "minmax(250px,1fr) minmax(200px,1fr) minmax(220px,1fr) 120px 110px 120px";
 
