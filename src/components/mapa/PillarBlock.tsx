@@ -78,8 +78,8 @@ export function SortablePillarBlock({
       {/* Obstacles area */}
       <div className="flex-1 min-w-0">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleObstacleDragEnd}>
-          <SortableContext items={pillar.obstacles.map(o => o.id)} strategy={verticalListSortingStrategy}>
-            {pillar.obstacles.map(obstacle => (
+          <SortableContext items={pillar.obstacles.filter(o => o.description || o.actions.length > 0).map(o => o.id)} strategy={verticalListSortingStrategy}>
+            {pillar.obstacles.filter(o => o.description || o.actions.length > 0).map(obstacle => (
               <SortableObstacleBlock
                 key={obstacle.id}
                 obstacle={obstacle}
