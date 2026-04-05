@@ -1,12 +1,11 @@
 import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useStrategicMap, type Pillar, type Obstacle, type Action, type ActionStatus, getComputedStatus } from "@/hooks/useStrategicData";
+import { useStrategicMap, type Pillar, type Obstacle, type Action, getComputedStatus } from "@/hooks/useStrategicData";
 import { InlineText } from "./InlineText";
 import { StatusSelect, getRowBg, getStatusDot } from "./StatusSelect";
 import { Button } from "@/components/ui/button";
-import { Plus, GripVertical, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext,

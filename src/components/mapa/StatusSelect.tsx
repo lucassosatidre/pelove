@@ -26,7 +26,6 @@ interface StatusSelectProps {
 export function StatusSelect({ action, onSave }: StatusSelectProps) {
   const [flash, setFlash] = useState(false);
   const computed = getComputedStatus(action);
-  const displayLabel = computed === "atrasado" ? "Atrasado" : STATUS_OPTIONS.find(s => s.value === action.status)?.label ?? action.status;
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value as ActionStatus;
