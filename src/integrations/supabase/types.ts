@@ -14,7 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      actions: {
+        Row: {
+          area: string | null
+          created_at: string | null
+          deadline: string | null
+          deliverable: string | null
+          description: string
+          execution_order: number | null
+          expected_result: string | null
+          id: string
+          importance: number | null
+          obstacle_id: string
+          priority_score: number | null
+          reliability: number | null
+          responsible: string | null
+          status: string
+          updated_at: string | null
+          urgency: number | null
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          deliverable?: string | null
+          description: string
+          execution_order?: number | null
+          expected_result?: string | null
+          id?: string
+          importance?: number | null
+          obstacle_id: string
+          priority_score?: number | null
+          reliability?: number | null
+          responsible?: string | null
+          status?: string
+          updated_at?: string | null
+          urgency?: number | null
+        }
+        Update: {
+          area?: string | null
+          created_at?: string | null
+          deadline?: string | null
+          deliverable?: string | null
+          description?: string
+          execution_order?: number | null
+          expected_result?: string | null
+          id?: string
+          importance?: number | null
+          obstacle_id?: string
+          priority_score?: number | null
+          reliability?: number | null
+          responsible?: string | null
+          status?: string
+          updated_at?: string | null
+          urgency?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actions_obstacle_id_fkey"
+            columns: ["obstacle_id"]
+            isOneToOne: false
+            referencedRelation: "obstacles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obstacles: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number
+          id: string
+          pillar_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          pillar_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          pillar_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obstacles_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pillars: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          id: string
+          name: string
+          number: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order: number
+          id?: string
+          name: string
+          number: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+          number?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          role?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vision: {
+        Row: {
+          created_at: string | null
+          id: string
+          reference_year: number
+          text: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reference_year?: number
+          text: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reference_year?: number
+          text?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
