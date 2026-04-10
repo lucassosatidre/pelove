@@ -95,7 +95,6 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
 
       <Bubble
         label="Ação"
-        borderColor="hsl(var(--primary))"
         width={BUBBLE_WIDTHS.action}
         className={action.bg_color ? "" : undefined}
         style={{
