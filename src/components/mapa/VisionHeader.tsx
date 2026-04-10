@@ -2,6 +2,7 @@ import { useVision } from "@/hooks/useStrategicData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { InlineText } from "./InlineText";
+import { RichInlineText } from "./RichInlineText";
 import { Badge } from "@/components/ui/badge";
 
 export function VisionHeader() {
@@ -35,7 +36,7 @@ export function VisionHeader() {
           />
         </Badge>
         <div className="flex-1">
-          <InlineText
+          <RichInlineText
             value={vision.text}
             onSave={saveText}
             multiline
