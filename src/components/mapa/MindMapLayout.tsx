@@ -7,7 +7,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { InlineText } from "./InlineText";
-import { ActionCard } from "./ActionCard";
+import { ActionBubbleChain } from "./ActionBubbleChain";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
@@ -131,9 +131,6 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
         <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mt-0.5">
           <GripVertical className="h-3.5 w-3.5" />
         </button>
-        <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
-          <ChevronIcon className="h-3.5 w-3.5" />
-        </button>
         <div className="flex-1 min-w-0">
           <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className="text-xs font-semibold" />
           {!isExpanded && (
@@ -142,6 +139,9 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
             </span>
           )}
         </div>
+        <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
+          <ChevronIcon className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -172,11 +172,6 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
         <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mt-0.5">
           <GripVertical className="h-3 w-3" />
         </button>
-        {obstacle.actions.length > 0 && (
-          <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
-            <ChevronIcon className="h-3 w-3" />
-          </button>
-        )}
         <div className="flex-1 min-w-0">
           <InlineText
             value={obstacle.description ?? ""}
@@ -190,6 +185,11 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
             </span>
           )}
         </div>
+        {obstacle.actions.length > 0 && (
+          <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
+            <ChevronIcon className="h-3 w-3" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -428,7 +428,7 @@ export function MindMapLayout() {
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeActionDragEnd(obs)}>
                   <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
                     {obs.actions.map((action) => (
-                      <ActionCard key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+                      <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
                     ))}
                   </SortableContext>
                 </DndContext>
