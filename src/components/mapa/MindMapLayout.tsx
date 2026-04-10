@@ -531,60 +531,61 @@ export function MindMapLayout() {
   const handleCollapseAll = () => collapseAll();
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-8 pt-4 pb-0 shrink-0">
-        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleExpandAll}>
-          <ChevronsUpDown className="h-3.5 w-3.5" /> Expandir todos
-        </Button>
-        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleCollapseAll}>
-          <ChevronsDownUp className="h-3.5 w-3.5" /> Colapsar todos
-        </Button>
-      </div>
+    <div className="flex-1 flex overflow-hidden" style={{ height: "calc(100vh - 48px)" }}>
+      {/* ─── Left: Vision (fixed, non-scrolling) ─── */}
+      {vision && (
+        <div className="w-[280px] min-w-[280px] border-r border-border p-4 overflow-y-auto shrink-0">
+          <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
+            <Badge className="bg-primary text-primary-foreground mb-2">
+              Visão{" "}
+              <InlineText
+                value={String(vision.reference_year)}
+                onSave={updateVisionYear}
+                className="text-primary-foreground font-bold"
+                inputClassName="w-16 text-foreground"
+              />
+            </Badge>
+            <RichInlineText
+              value={vision.text}
+              onSave={updateVisionText}
+              multiline
+              className="text-xs leading-relaxed text-foreground block mt-1"
+              inputClassName="text-xs"
+            />
+          </div>
+        </div>
+      )}
 
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-auto scrollbar-thin"
-        onContextMenu={handleContextMenu}
-      >
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
+      {/* ─── Right: Scrollable map area ─── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Toolbar */}
+        <div className="flex items-center gap-2 px-8 pt-4 pb-2 shrink-0">
+          <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleExpandAll}>
+            <ChevronsUpDown className="h-3.5 w-3.5" /> Expandir todos
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleCollapseAll}>
+            <ChevronsDownUp className="h-3.5 w-3.5" /> Colapsar todos
+          </Button>
+        </div>
+
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-auto scrollbar-thin"
+          onContextMenu={handleContextMenu}
         >
-          <div ref={containerRef} className="relative p-8 min-w-max">
-            <Connectors refs={containerRef} />
-
-            <div className="flex items-start gap-16">
-              {/* ─── Column 1: Vision ─── */}
-              {vision && (
-                <div className="flex flex-col items-center z-10 shrink-0 sticky top-5 self-start" style={{ minWidth: 200, maxWidth: 240, position: "sticky", top: 20, left: 0 }}>
-                  <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
-                    <Badge className="bg-primary text-primary-foreground mb-2">
-                      Visão{" "}
-                      <InlineText
-                        value={String(vision.reference_year)}
-                        onSave={updateVisionYear}
-                        className="text-primary-foreground font-bold"
-                        inputClassName="w-16 text-foreground"
-                      />
-                    </Badge>
-                    <RichInlineText
-                      value={vision.text}
-                      onSave={updateVisionText}
-                      multiline
-                      className="text-xs leading-relaxed text-foreground block mt-1"
-                      inputClassName="text-xs"
-                    />
-                  </div>
-                </div>
-              )}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div ref={containerRef} className="relative p-8 min-w-max">
+              <Connectors refs={containerRef} />
 
               {/* ─── Rows: each pillar + its obstacles + actions ─── */}
-              <div className="flex flex-col gap-3 z-10">
+              <div className="flex flex-col gap-3 z-10 relative">
                 <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
                   {visibleData.map((pillar, idx) => {
                     const expanded = isPillarExpanded(pillar.id);
@@ -696,8 +697,8 @@ export function MindMapLayout() {
                 )}
               </div>
             </div>
-          </div>
-        </DndContext>
+          </DndContext>
+        </div>
       </div>
 
       {menuElement}
