@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, Paintbrush, Bold, Type } from "lucide-react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,6 +119,7 @@ export function useMapContextMenu({ onDeletePillar, onDeleteObstacle, onDeleteAc
   };
 
   const isDark = document.documentElement.classList.contains("dark");
+  const getSwatchBg = (c: typeof BG_COLORS[number]) => c.value ? (isDark && c.dark ? c.dark : c.value) : "transparent";
 
   const menuElement = menu ? (
     <div
@@ -152,7 +154,7 @@ export function useMapContextMenu({ onDeletePillar, onDeleteObstacle, onDeleteAc
                 key={c.label}
                 title={c.label}
                 className="h-6 w-6 rounded border border-border hover:ring-2 hover:ring-primary"
-                style={{ backgroundColor: c.value ? (isDark ? c.dark : c.value) : "transparent" }}
+                style={{ backgroundColor: getSwatchBg(c) }}
                 onClick={() => { onUpdateStyle(menu.target.type, menu.target.id, "bg_color", c.value); close(); }}
               />
             ))}

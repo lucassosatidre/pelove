@@ -7,6 +7,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { InlineText } from "./InlineText";
+import { RichInlineText } from "./RichInlineText";
 import { ActionBubbleChain } from "./ActionBubbleChain";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronsDownUp, Chevrons
 import { cn } from "@/lib/utils";
 import { useMapContextMenu } from "./MapContextMenu";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
+import { resolveColor } from "@/lib/darkModeColors";
 
 // ─── Connector SVG ───
 function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
@@ -206,8 +208,8 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
   const customStyle: React.CSSProperties = {
     ...style,
     borderLeftColor: borderVar,
-    ...(pillar.bg_color ? { backgroundColor: pillar.bg_color } : {}),
-    ...(pillar.text_color ? { color: pillar.text_color } : {}),
+    ...(pillar.bg_color ? { backgroundColor: resolveColor(pillar.bg_color, "bg")! } : {}),
+    ...(pillar.text_color ? { color: resolveColor(pillar.text_color, "text")! } : {}),
   };
 
   return (
@@ -226,7 +228,7 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <div className="flex-1 min-w-0">
-          <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className={cn("text-xs font-semibold", pillar.is_bold && "font-black")} />
+          <RichInlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className={cn("text-xs font-semibold", pillar.is_bold && "font-black")} />
           {!isExpanded && (
             <span className="text-[10px] text-muted-foreground block mt-0.5">
               {obstacleCount} obst. · {actionCount} ações
@@ -255,8 +257,8 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
 
   const customStyle: React.CSSProperties = {
     ...baseStyle,
-    ...(obstacle.bg_color ? { backgroundColor: obstacle.bg_color } : {}),
-    ...(obstacle.text_color ? { color: obstacle.text_color } : {}),
+    ...(obstacle.bg_color ? { backgroundColor: resolveColor(obstacle.bg_color, "bg")! } : {}),
+    ...(obstacle.text_color ? { color: resolveColor(obstacle.text_color, "text")! } : {}),
   };
 
   return (
@@ -276,7 +278,7 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
           <GripVertical className="h-3 w-3" />
         </button>
         <div className="flex-1 min-w-0">
-          <InlineText
+          <RichInlineText
             value={obstacle.description ?? ""}
             onSave={(v) => onUpdate(obstacle.id, "description", v)}
             placeholder="Clique para definir"
@@ -571,7 +573,7 @@ export function MindMapLayout() {
                       inputClassName="w-16 text-foreground"
                     />
                   </Badge>
-                  <InlineText
+                  <RichInlineText
                     value={vision.text}
                     onSave={updateVisionText}
                     multiline
