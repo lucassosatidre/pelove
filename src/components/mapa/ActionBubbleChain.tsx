@@ -5,7 +5,7 @@ import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./InlineText";
 import { StatusSelect, getRowBg } from "./StatusSelect";
-import { getComputedStatus, STATUS_CONFIG, type Action } from "@/hooks/useStrategicData";
+import { getComputedStatus, type Action } from "@/hooks/useStrategicData";
 
 function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | null; isOverdue: boolean; onSave: (v: string | null) => Promise<void> }) {
   const [flash, setFlash] = useState(false);
@@ -62,11 +62,6 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
   const cs = getComputedStatus(action);
   const isOverdue = cs === "atrasado";
 
-  const formatDate = (d: string | null) => {
-    if (!d) return "—";
-    const [y, m, day] = d.split("-");
-    return `${day}/${m}/${y}`;
-  };
 
   return (
     <div

@@ -428,7 +428,7 @@ export function MindMapLayout() {
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeActionDragEnd(obs)}>
                   <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
                     {obs.actions.map((action) => (
-                      <ActionCard key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+                      <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
                     ))}
                   </SortableContext>
                 </DndContext>
