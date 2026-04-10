@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-ki
 import { GripVertical, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./InlineText";
+import { RichInlineText } from "./RichInlineText";
 import { SortableActionRow, ACTION_COLS } from "./ActionRow";
 import { Button } from "@/components/ui/button";
 import type { Obstacle } from "@/hooks/useStrategicData";
@@ -48,7 +49,7 @@ export function SortableObstacleBlock({ obstacle, onUpdate, onUpdateAction, onAd
             <GripVertical className="h-3.5 w-3.5" />
           </button>
           <div className="flex-1">
-            <InlineText
+            <RichInlineText
               value={obstacle.description ?? ""}
               onSave={(v) => onUpdate(obstacle.id, "description", v)}
               placeholder="Clique para definir"

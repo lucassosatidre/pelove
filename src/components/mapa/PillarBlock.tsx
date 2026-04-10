@@ -6,6 +6,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-ki
 import { GripVertical, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./InlineText";
+import { RichInlineText } from "./RichInlineText";
 import { SortableObstacleBlock } from "./ObstacleBlock";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,7 +71,7 @@ export function SortablePillarBlock({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
           <div className="flex-1">
-            <InlineText value={pillar.name} onSave={(v) => onUpdatePillar(pillar.id, v)} className="text-xs font-semibold block" />
+            <RichInlineText value={pillar.name} onSave={(v) => onUpdatePillar(pillar.id, v)} className="text-xs font-semibold block" />
           </div>
         </div>
       </div>
