@@ -4,8 +4,16 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./InlineText";
-import { StatusSelect, getRowBg } from "./StatusSelect";
+import { StatusSelect } from "./StatusSelect";
 import { getComputedStatus, type Action } from "@/hooks/useStrategicData";
+
+const BUBBLE_WIDTHS: Record<string, string> = {
+  action: "w-[200px]",
+  expected: "w-[220px]",
+  deliverable: "w-[220px]",
+  responsible: "w-[200px]",
+  status: "w-[150px]",
+};
 
 function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | null; isOverdue: boolean; onSave: (v: string | null) => Promise<void> }) {
   const [flash, setFlash] = useState(false);
@@ -26,18 +34,21 @@ function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | nul
   );
 }
 
-function Bubble({ label, children, className, borderColor }: { label: string; children: React.ReactNode; className?: string; borderColor?: string }) {
+function Bubble({ label, children, className, borderColor, width }: {
+  label: string; children: React.ReactNode; className?: string; borderColor?: string; width?: string;
+}) {
   return (
     <div
       className={cn(
-        "bg-card rounded-lg border border-border p-2 min-w-[80px] max-w-[220px] shrink-0",
+        "bg-card rounded-lg border border-border p-2 min-h-[80px] shrink-0 flex flex-col",
         borderColor && "border-l-4",
+        width,
         className
       )}
       style={borderColor ? { borderLeftColor: borderColor } : undefined}
     >
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium block mb-0.5">{label}</span>
-      <div className="text-xs">{children}</div>
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium block mb-1">{label}</span>
+      <div className="text-xs flex-1">{children}</div>
     </div>
   );
 }
@@ -61,34 +72,32 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
   const style = { transform: CSS.Transform.toString(transform), transition };
   const cs = getComputedStatus(action);
   const isOverdue = cs === "atrasado";
-
+  const isScheduled = action.status === "agendado";
+  const deadlineLabel = isScheduled ? "Responsável | Agendado" : "Responsável | Prazo";
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-0",
+        "flex items-stretch gap-0",
         isDragging && "opacity-50 shadow-lg z-20"
       )}
       data-node="action"
       data-id={action.id}
       data-obstacle={obstacleId}
     >
-      {/* Drag handle */}
-      <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mr-1">
+      <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mr-1 self-center">
         <GripVertical className="h-3 w-3" />
       </button>
 
-      {/* Bubble 1: Título */}
-      <Bubble label="Ação" borderColor="hsl(var(--primary))">
+      <Bubble label="Ação" borderColor="hsl(var(--primary))" width={BUBBLE_WIDTHS.action}>
         <InlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className="text-xs font-semibold" />
       </Bubble>
 
       <BubbleConnector />
 
-      {/* Bubble 2: Resultado esperado */}
-      <Bubble label="Resultado esperado">
+      <Bubble label="Resultado esperado" width={BUBBLE_WIDTHS.expected}>
         <InlineText
           value={action.expected_result ?? ""}
           onSave={(v) => onUpdate(action.id, "expected_result", v || null)}
@@ -99,8 +108,7 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
 
       <BubbleConnector />
 
-      {/* Bubble 3: Entregável */}
-      <Bubble label="Entregável">
+      <Bubble label="Entregável" width={BUBBLE_WIDTHS.deliverable}>
         <InlineText
           value={action.deliverable ?? ""}
           onSave={(v) => onUpdate(action.id, "deliverable", v || null)}
@@ -111,24 +119,21 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
 
       <BubbleConnector />
 
-      {/* Bubble 4: Responsável + Prazo */}
-      <Bubble label="Responsável | Prazo">
-        <div className="flex items-center gap-1.5">
+      <Bubble label={deadlineLabel} width={BUBBLE_WIDTHS.responsible}>
+        <div className="flex flex-col gap-1">
           <InlineText
             value={action.responsible ?? ""}
             onSave={(v) => onUpdate(action.id, "responsible", v || null)}
             placeholder="—"
             className="text-xs"
           />
-          <span className="text-muted-foreground text-[10px]">|</span>
           <DeadlineInput deadline={action.deadline} isOverdue={isOverdue} onSave={(v) => onUpdate(action.id, "deadline", v)} />
         </div>
       </Bubble>
 
       <BubbleConnector />
 
-      {/* Bubble 5: Status */}
-      <Bubble label="Status" className={getRowBg(action)}>
+      <Bubble label="Status" width={BUBBLE_WIDTHS.status}>
         <StatusSelect action={action} onSave={(v) => onUpdate(action.id, "status", v)} />
       </Bubble>
     </div>

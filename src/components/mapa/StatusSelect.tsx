@@ -10,12 +10,12 @@ const STATUS_OPTIONS: { value: ActionStatus; label: string }[] = [
   { value: "concluido", label: "Concluído" },
 ];
 
-const DOT_COLORS: Record<string, string> = {
-  agendado: "bg-[hsl(var(--status-scheduled))]",
-  nao_iniciado: "bg-[hsl(var(--status-not-started))]",
-  em_andamento: "bg-[hsl(var(--status-in-progress))]",
-  concluido: "bg-[hsl(var(--status-completed))]",
-  atrasado: "bg-[hsl(var(--status-overdue))]",
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  agendado: { bg: "bg-[#3B82F6]", text: "text-white" },
+  nao_iniciado: { bg: "bg-[#6B7280]", text: "text-white" },
+  em_andamento: { bg: "bg-[#F97316]", text: "text-white" },
+  concluido: { bg: "bg-[#22C55E]", text: "text-white" },
+  atrasado: { bg: "bg-[#EF4444]", text: "text-white" },
 };
 
 interface StatusSelectProps {
@@ -26,6 +26,7 @@ interface StatusSelectProps {
 export function StatusSelect({ action, onSave }: StatusSelectProps) {
   const [flash, setFlash] = useState(false);
   const computed = getComputedStatus(action);
+  const colors = STATUS_COLORS[computed] ?? STATUS_COLORS.nao_iniciado;
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value as ActionStatus;
@@ -35,15 +36,14 @@ export function StatusSelect({ action, onSave }: StatusSelectProps) {
   };
 
   return (
-    <div className={cn("flex items-center gap-1.5 transition-colors duration-300", flash && "bg-green-100 rounded")}>
-      <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", DOT_COLORS[computed])} />
+    <div className={cn("flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-300", colors.bg, flash && "ring-2 ring-green-400")}>
       <select
         value={action.status}
         onChange={handleChange}
-        className="bg-transparent text-xs border-none focus:outline-none focus:ring-0 cursor-pointer"
+        className={cn("bg-transparent text-xs border-none focus:outline-none focus:ring-0 cursor-pointer", colors.text)}
       >
         {STATUS_OPTIONS.map(s => (
-          <option key={s.value} value={s.value}>{s.label}</option>
+          <option key={s.value} value={s.value} className="bg-card text-foreground">{s.label}</option>
         ))}
       </select>
     </div>
@@ -52,16 +52,10 @@ export function StatusSelect({ action, onSave }: StatusSelectProps) {
 
 export function getRowBg(action: Action): string {
   const cs = getComputedStatus(action);
-  switch (cs) {
-    case "agendado": return "bg-blue-50";
-    case "nao_iniciado": return "bg-gray-50";
-    case "em_andamento": return "bg-orange-50";
-    case "concluido": return "bg-green-50";
-    case "atrasado": return "bg-red-50";
-    default: return "";
-  }
+  const colors = STATUS_COLORS[cs];
+  return colors ? colors.bg : "";
 }
 
 export function getStatusDot(action: Action): string {
-  return DOT_COLORS[getComputedStatus(action)] ?? "";
+  return "";
 }
