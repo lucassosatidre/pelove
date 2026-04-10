@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStrategicMap, useVision } from "@/hooks/useStrategicData";
+import { useCollapseState } from "@/hooks/useCollapseState";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -9,7 +10,7 @@ import { InlineText } from "./InlineText";
 import { ActionCard } from "./ActionCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GripVertical } from "lucide-react";
+import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
 
@@ -25,7 +26,6 @@ function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
       const rect = container.getBoundingClientRect();
       const newLines: typeof lines = [];
 
-      // vision → pillars
       const visionEl = container.querySelector("[data-node='vision']");
       const pillarEls = container.querySelectorAll("[data-node='pillar']");
       if (visionEl) {
@@ -41,7 +41,6 @@ function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
         });
       }
 
-      // pillar → obstacles
       pillarEls.forEach((pe) => {
         const pillarId = pe.getAttribute("data-id");
         const pr = pe.getBoundingClientRect();
@@ -57,7 +56,6 @@ function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
         });
       });
 
-      // obstacle → actions
       const obsEls = container.querySelectorAll("[data-node='obstacle']");
       obsEls.forEach((oe) => {
         const obsId = oe.getAttribute("data-id");
@@ -109,12 +107,14 @@ function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
 }
 
 // ─── Sortable Pillar Card ───
-function SortablePillarCard({ pillar, idx, onUpdate }: {
+function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obstacleCount, actionCount }: {
   pillar: Pillar; idx: number; onUpdate: (id: string, name: string) => Promise<void>;
+  isExpanded: boolean; onToggle: () => void; obstacleCount: number; actionCount: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: pillar.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const borderVar = `hsl(var(--pillar-${(idx % 6) + 1}))`;
+  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
   return (
     <div
@@ -131,18 +131,30 @@ function SortablePillarCard({ pillar, idx, onUpdate }: {
         <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mt-0.5">
           <GripVertical className="h-3.5 w-3.5" />
         </button>
-        <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className="text-xs font-semibold" />
+        <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
+          <ChevronIcon className="h-3.5 w-3.5" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className="text-xs font-semibold" />
+          {!isExpanded && (
+            <span className="text-[10px] text-muted-foreground block mt-0.5">
+              {obstacleCount} obst. · {actionCount} ações
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 // ─── Sortable Obstacle Card ───
-function SortableObstacleCard({ obstacle, onUpdate }: {
+function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
   obstacle: Obstacle; onUpdate: (id: string, field: string, value: string) => Promise<void>;
+  isExpanded: boolean; onToggle: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: obstacle.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
   return (
     <div
@@ -160,12 +172,24 @@ function SortableObstacleCard({ obstacle, onUpdate }: {
         <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mt-0.5">
           <GripVertical className="h-3 w-3" />
         </button>
-        <InlineText
-          value={obstacle.description ?? ""}
-          onSave={(v) => onUpdate(obstacle.id, "description", v)}
-          placeholder="Clique para definir"
-          className="text-xs"
-        />
+        {obstacle.actions.length > 0 && (
+          <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
+            <ChevronIcon className="h-3 w-3" />
+          </button>
+        )}
+        <div className="flex-1 min-w-0">
+          <InlineText
+            value={obstacle.description ?? ""}
+            onSave={(v) => onUpdate(obstacle.id, "description", v)}
+            placeholder="Clique para definir"
+            className="text-xs"
+          />
+          {!isExpanded && obstacle.actions.length > 0 && (
+            <span className="text-[10px] text-muted-foreground block mt-0.5">
+              {obstacle.actions.length} {obstacle.actions.length === 1 ? "ação" : "ações"}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -177,6 +201,7 @@ export function MindMapLayout() {
   const qc = useQueryClient();
   const containerRef = useRef<HTMLDivElement>(null!);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const { isPillarExpanded, isObstacleExpanded, togglePillar, toggleObstacle, expandAll, collapseAll } = useCollapseState();
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["strategic-map"] }), [qc]);
   const invalidateVision = useCallback(() => qc.invalidateQueries({ queryKey: ["vision"] }), [qc]);
@@ -275,24 +300,36 @@ export function MindMapLayout() {
     return <div className="flex-1 flex items-center justify-center"><div className="h-8 w-8 rounded-md bg-primary animate-pulse" /></div>;
   }
 
-  // Gather all visible obstacles per pillar for layout
   const visibleData = pillars?.map(p => ({
     ...p,
     visibleObstacles: p.obstacles.filter(o => o.description || o.actions.length > 0),
   })) ?? [];
 
+  const allPillarIds = visibleData.map(p => p.id);
+  const allObstacleIds = visibleData.flatMap(p => p.visibleObstacles.map(o => o.id));
+
+  const handleExpandAll = () => expandAll(allPillarIds, allObstacleIds);
+  const handleCollapseAll = () => collapseAll();
+
   return (
     <div className="flex-1 overflow-auto">
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-8 pt-4 pb-0">
+        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleExpandAll}>
+          <ChevronsUpDown className="h-3.5 w-3.5" /> Expandir todos
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleCollapseAll}>
+          <ChevronsDownUp className="h-3.5 w-3.5" /> Colapsar todos
+        </Button>
+      </div>
+
       <div ref={containerRef} className="relative flex items-start gap-16 p-8 min-w-max">
         <Connectors refs={containerRef} />
 
         {/* ─── Column 1: Vision ─── */}
         {vision && (
           <div className="flex flex-col items-center z-10 shrink-0" style={{ minWidth: 200, maxWidth: 240 }}>
-            <div
-              className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full"
-              data-node="vision"
-            >
+            <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
               <Badge className="bg-primary text-primary-foreground mb-2">
                 Visão{" "}
                 <InlineText
@@ -318,7 +355,16 @@ export function MindMapLayout() {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePillarDragEnd}>
             <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
               {visibleData.map((pillar, idx) => (
-                <SortablePillarCard key={pillar.id} pillar={pillar} idx={idx} onUpdate={updatePillar} />
+                <SortablePillarCard
+                  key={pillar.id}
+                  pillar={pillar}
+                  idx={idx}
+                  onUpdate={updatePillar}
+                  isExpanded={isPillarExpanded(pillar.id)}
+                  onToggle={() => togglePillar(pillar.id)}
+                  obstacleCount={pillar.visibleObstacles.length}
+                  actionCount={pillar.visibleObstacles.reduce((sum, o) => sum + o.actions.length, 0)}
+                />
               ))}
             </SortableContext>
           </DndContext>
@@ -333,14 +379,20 @@ export function MindMapLayout() {
           )}
         </div>
 
-        {/* ─── Column 3: Obstacles ─── */}
+        {/* ─── Column 3: Obstacles (only for expanded pillars) ─── */}
         <div className="flex flex-col gap-3 z-10 shrink-0">
-          {visibleData.map((pillar) => (
+          {visibleData.filter(p => isPillarExpanded(p.id)).map((pillar) => (
             <div key={pillar.id} className="flex flex-col gap-2">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeObstacleDragEnd(pillar)}>
                 <SortableContext items={pillar.visibleObstacles.map(o => o.id)} strategy={verticalListSortingStrategy}>
                   {pillar.visibleObstacles.map((obs) => (
-                    <SortableObstacleCard key={obs.id} obstacle={obs} onUpdate={updateObstacle} />
+                    <SortableObstacleCard
+                      key={obs.id}
+                      obstacle={obs}
+                      onUpdate={updateObstacle}
+                      isExpanded={isObstacleExpanded(obs.id)}
+                      onToggle={() => toggleObstacle(obs.id)}
+                    />
                   ))}
                 </SortableContext>
               </DndContext>
@@ -368,10 +420,10 @@ export function MindMapLayout() {
           ))}
         </div>
 
-        {/* ─── Column 4: Actions ─── */}
+        {/* ─── Column 4: Actions (only for expanded pillars + expanded obstacles) ─── */}
         <div className="flex flex-col gap-3 z-10 shrink-0">
-          {visibleData.flatMap((pillar) =>
-            pillar.visibleObstacles.map((obs) => (
+          {visibleData.filter(p => isPillarExpanded(p.id)).flatMap((pillar) =>
+            pillar.visibleObstacles.filter(o => isObstacleExpanded(o.id)).map((obs) => (
               <div key={obs.id} className="flex flex-col gap-2">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeActionDragEnd(obs)}>
                   <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
