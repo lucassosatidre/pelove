@@ -561,7 +561,7 @@ export function MindMapLayout() {
             <div className="flex items-start gap-16">
               {/* ─── Column 1: Vision ─── */}
               {vision && (
-                <div className="flex flex-col items-center z-10 shrink-0 self-start" style={{ minWidth: 200, maxWidth: 240 }}>
+                <div className="flex flex-col items-center z-10 shrink-0 sticky top-5 self-start" style={{ minWidth: 200, maxWidth: 240, position: "sticky", top: 20, left: 0 }}>
                   <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
                     <Badge className="bg-primary text-primary-foreground mb-2">
                       Visão{" "}
