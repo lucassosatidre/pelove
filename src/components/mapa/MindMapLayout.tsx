@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStrategicMap, useVision } from "@/hooks/useStrategicData";
 import { useCollapseState } from "@/hooks/useCollapseState";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, DragOverlay, type DragStartEvent, type DragOverEvent, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { InlineText } from "./InlineText";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMapContextMenu } from "./MapContextMenu";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
 
 // ─── Connector SVG ───
@@ -106,6 +107,76 @@ function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
   );
 }
 
+// ─── Auto-scroll hook ───
+function useAutoScroll(scrollRef: React.RefObject<HTMLElement>, isDragging: boolean) {
+  const animRef = useRef<number>(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let mouseX = 0, mouseY = 0;
+
+    const onMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    };
+
+    const loop = () => {
+      const rect = el.getBoundingClientRect();
+      const edge = 80;
+      const maxSpeed = 15;
+      const minSpeed = 2;
+
+      const calc = (dist: number) => {
+        if (dist >= edge) return 0;
+        const t = 1 - dist / edge;
+        return minSpeed + (maxSpeed - minSpeed) * t;
+      };
+
+      const distL = mouseX - rect.left;
+      const distR = rect.right - mouseX;
+      const distT = mouseY - rect.top;
+      const distB = rect.bottom - mouseY;
+
+      if (distL < edge && distL > 0) el.scrollLeft -= calc(distL);
+      if (distR < edge && distR > 0) el.scrollLeft += calc(distR);
+      if (distT < edge && distT > 0) el.scrollTop -= calc(distT);
+      if (distB < edge && distB > 0) el.scrollTop += calc(distB);
+
+      animRef.current = requestAnimationFrame(loop);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", onMove);
+      animRef.current = requestAnimationFrame(loop);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(animRef.current);
+    };
+  }, [isDragging, scrollRef]);
+}
+
+// ─── Droppable wrapper for cross-group drops ───
+function DroppableZone({ id, type, children, isOver }: { id: string; type: string; children: React.ReactNode; isOver?: boolean }) {
+  const { setNodeRef, isOver: over } = useDroppable({ id: `drop-${type}-${id}`, data: { type, id } });
+  const active = isOver ?? over;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "transition-all duration-150",
+        active && "ring-2 ring-dashed ring-primary/60 bg-primary/5 rounded-lg"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ─── Sortable Pillar Card ───
 function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obstacleCount, actionCount }: {
   pillar: Pillar; idx: number; onUpdate: (id: string, name: string) => Promise<void>;
@@ -152,7 +223,10 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
   obstacle: Obstacle; onUpdate: (id: string, field: string, value: string) => Promise<void>;
   isExpanded: boolean; onToggle: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: obstacle.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: obstacle.id,
+    data: { type: "obstacle", pillarId: obstacle.pillar_id },
+  });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
@@ -200,8 +274,13 @@ export function MindMapLayout() {
   const { data: pillars, isLoading } = useStrategicMap();
   const qc = useQueryClient();
   const containerRef = useRef<HTMLDivElement>(null!);
+  const scrollRef = useRef<HTMLDivElement>(null!);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const { isPillarExpanded, isObstacleExpanded, togglePillar, toggleObstacle, expandAll, collapseAll } = useCollapseState();
+  const [isDragging, setIsDragging] = useState(false);
+  const [overDropId, setOverDropId] = useState<string | null>(null);
+
+  useAutoScroll(scrollRef, isDragging);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["strategic-map"] }), [qc]);
   const invalidateVision = useCallback(() => qc.invalidateQueries({ queryKey: ["vision"] }), [qc]);
@@ -259,37 +338,128 @@ export function MindMapLayout() {
     invalidate();
   }, [pillars, invalidate]);
 
-  // ─── DnD handlers ───
-  const handlePillarDragEnd = useCallback(async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id || !pillars) return;
-    const oldIdx = pillars.findIndex(p => p.id === active.id);
-    const newIdx = pillars.findIndex(p => p.id === over.id);
-    const reordered = arrayMove(pillars, oldIdx, newIdx);
-    await Promise.all(reordered.map((p, i) => supabase.from("pillars").update({ display_order: i + 1, number: i + 1 }).eq("id", p.id)));
+  // ─── Delete handlers ───
+  const deletePillar = useCallback(async (id: string) => {
+    const pillar = pillars?.find(p => p.id === id);
+    if (!pillar) return;
+    const obsIds = pillar.obstacles.map(o => o.id);
+    if (obsIds.length > 0) {
+      await supabase.from("actions").delete().in("obstacle_id", obsIds);
+      await supabase.from("obstacles").delete().eq("pillar_id", id);
+    }
+    await supabase.from("pillars").delete().eq("id", id);
     invalidate();
   }, [pillars, invalidate]);
 
-  const makeObstacleDragEnd = useCallback((pillar: Pillar) => async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const visible = pillar.obstacles.filter(o => o.description || o.actions.length > 0);
-    const oldIdx = visible.findIndex(o => o.id === active.id);
-    const newIdx = visible.findIndex(o => o.id === over.id);
-    const reordered = arrayMove(visible, oldIdx, newIdx);
-    await Promise.all(reordered.map((o, i) => supabase.from("obstacles").update({ display_order: i + 1 }).eq("id", o.id)));
+  const deleteObstacle = useCallback(async (id: string) => {
+    await supabase.from("actions").delete().eq("obstacle_id", id);
+    await supabase.from("obstacles").delete().eq("id", id);
     invalidate();
   }, [invalidate]);
 
-  const makeActionDragEnd = useCallback((obstacle: Obstacle) => async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIdx = obstacle.actions.findIndex(a => a.id === active.id);
-    const newIdx = obstacle.actions.findIndex(a => a.id === over.id);
-    const reordered = arrayMove(obstacle.actions, oldIdx, newIdx);
-    await Promise.all(reordered.map((a, i) => supabase.from("actions").update({ execution_order: i + 1 }).eq("id", a.id)));
+  const deleteAction = useCallback(async (id: string) => {
+    await supabase.from("actions").delete().eq("id", id);
     invalidate();
   }, [invalidate]);
+
+  // ─── Context menu ───
+  const { handleContextMenu, menuElement, confirmElement } = useMapContextMenu({
+    onDeletePillar: deletePillar,
+    onDeleteObstacle: deleteObstacle,
+    onDeleteAction: deleteAction,
+  });
+
+  // ─── Unified DnD handlers ───
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setIsDragging(true);
+  }, []);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const overId = event.over?.id?.toString() ?? null;
+    setOverDropId(overId);
+  }, []);
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    setIsDragging(false);
+    setOverDropId(null);
+    const { active, over } = event;
+    if (!over || !pillars) return;
+
+    const activeId = active.id.toString();
+    const overId = over.id.toString();
+
+    // Check if dropped on a droppable zone (cross-group move)
+    if (overId.startsWith("drop-")) {
+      const parts = overId.replace("drop-", "").split("-");
+      const dropType = parts[0]; // "pillar" or "obstacle"
+      const dropTargetId = parts.slice(1).join("-");
+
+      // Moving obstacle to another pillar
+      if (dropType === "pillar") {
+        const allObs = pillars.flatMap(p => p.obstacles);
+        const obs = allObs.find(o => o.id === activeId);
+        if (obs && obs.pillar_id !== dropTargetId) {
+          await supabase.from("obstacles").update({ pillar_id: dropTargetId }).eq("id", activeId);
+          invalidate();
+          return;
+        }
+      }
+
+      // Moving action to another obstacle
+      if (dropType === "obstacle") {
+        const allActions = pillars.flatMap(p => p.obstacles.flatMap(o => o.actions));
+        const act = allActions.find(a => a.id === activeId);
+        if (act && act.obstacle_id !== dropTargetId) {
+          await supabase.from("actions").update({ obstacle_id: dropTargetId }).eq("id", activeId);
+          invalidate();
+          return;
+        }
+      }
+    }
+
+    // Same-group reorder: Pillars
+    if (activeId !== overId) {
+      const pillarIdx = pillars.findIndex(p => p.id === activeId);
+      const pillarOverIdx = pillars.findIndex(p => p.id === overId);
+      if (pillarIdx !== -1 && pillarOverIdx !== -1) {
+        const reordered = arrayMove(pillars, pillarIdx, pillarOverIdx);
+        await Promise.all(reordered.map((p, i) => supabase.from("pillars").update({ display_order: i + 1, number: i + 1 }).eq("id", p.id)));
+        invalidate();
+        return;
+      }
+
+      // Same-group reorder: Obstacles within same pillar
+      for (const pillar of pillars) {
+        const visible = pillar.obstacles.filter(o => o.description || o.actions.length > 0);
+        const oldIdx = visible.findIndex(o => o.id === activeId);
+        const newIdx = visible.findIndex(o => o.id === overId);
+        if (oldIdx !== -1 && newIdx !== -1) {
+          const reordered = arrayMove(visible, oldIdx, newIdx);
+          await Promise.all(reordered.map((o, i) => supabase.from("obstacles").update({ display_order: i + 1 }).eq("id", o.id)));
+          invalidate();
+          return;
+        }
+      }
+
+      // Same-group reorder: Actions within same obstacle
+      const allObs = pillars.flatMap(p => p.obstacles);
+      for (const obs of allObs) {
+        const oldIdx = obs.actions.findIndex(a => a.id === activeId);
+        const newIdx = obs.actions.findIndex(a => a.id === overId);
+        if (oldIdx !== -1 && newIdx !== -1) {
+          const reordered = arrayMove(obs.actions, oldIdx, newIdx);
+          await Promise.all(reordered.map((a, i) => supabase.from("actions").update({ execution_order: i + 1 }).eq("id", a.id)));
+          invalidate();
+          return;
+        }
+      }
+    }
+  }, [pillars, invalidate]);
+
+  const handleDragCancel = useCallback(() => {
+    setIsDragging(false);
+    setOverDropId(null);
+  }, []);
 
   // ─── New item states ───
   const [newPillar, setNewPillar] = useState(false);
@@ -307,14 +477,19 @@ export function MindMapLayout() {
 
   const allPillarIds = visibleData.map(p => p.id);
   const allObstacleIds = visibleData.flatMap(p => p.visibleObstacles.map(o => o.id));
+  const allItemIds = [
+    ...allPillarIds,
+    ...allObstacleIds,
+    ...visibleData.flatMap(p => p.visibleObstacles.flatMap(o => o.actions.map(a => a.id))),
+  ];
 
   const handleExpandAll = () => expandAll(allPillarIds, allObstacleIds);
   const handleCollapseAll = () => collapseAll();
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-8 pt-4 pb-0">
+      <div className="flex items-center gap-2 px-8 pt-4 pb-0 shrink-0">
         <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleExpandAll}>
           <ChevronsUpDown className="h-3.5 w-3.5" /> Expandir todos
         </Button>
@@ -323,140 +498,154 @@ export function MindMapLayout() {
         </Button>
       </div>
 
-      <div ref={containerRef} className="relative flex items-start gap-16 p-8 min-w-max">
-        <Connectors refs={containerRef} />
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-auto scrollbar-thin"
+        onContextMenu={handleContextMenu}
+      >
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div ref={containerRef} className="relative flex items-start gap-16 p-8 min-w-max">
+            <Connectors refs={containerRef} />
 
-        {/* ─── Column 1: Vision ─── */}
-        {vision && (
-          <div className="flex flex-col items-center z-10 shrink-0" style={{ minWidth: 200, maxWidth: 240 }}>
-            <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
-              <Badge className="bg-primary text-primary-foreground mb-2">
-                Visão{" "}
-                <InlineText
-                  value={String(vision.reference_year)}
-                  onSave={updateVisionYear}
-                  className="text-primary-foreground font-bold"
-                  inputClassName="w-16 text-foreground"
-                />
-              </Badge>
-              <InlineText
-                value={vision.text}
-                onSave={updateVisionText}
-                multiline
-                className="text-xs leading-relaxed text-foreground block mt-1"
-                inputClassName="text-xs"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ─── Column 2: Pillars ─── */}
-        <div className="flex flex-col gap-3 z-10 shrink-0">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePillarDragEnd}>
-            <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
-              {visibleData.map((pillar, idx) => (
-                <SortablePillarCard
-                  key={pillar.id}
-                  pillar={pillar}
-                  idx={idx}
-                  onUpdate={updatePillar}
-                  isExpanded={isPillarExpanded(pillar.id)}
-                  onToggle={() => togglePillar(pillar.id)}
-                  obstacleCount={pillar.visibleObstacles.length}
-                  actionCount={pillar.visibleObstacles.reduce((sum, o) => sum + o.actions.length, 0)}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-          {newPillar ? (
-            <div className="min-w-[160px]">
-              <InlineText value="" onSave={async (v) => { await addPillar(v); setNewPillar(false); }} placeholder="Nome do pilar..." autoFocus className="text-xs font-semibold" />
-            </div>
-          ) : (
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7 gap-1 self-start" onClick={() => setNewPillar(true)}>
-              <Plus className="h-3 w-3" /> Pilar
-            </Button>
-          )}
-        </div>
-
-        {/* ─── Column 3: Obstacles (only for expanded pillars) ─── */}
-        <div className="flex flex-col gap-3 z-10 shrink-0">
-          {visibleData.filter(p => isPillarExpanded(p.id)).map((pillar) => (
-            <div key={pillar.id} className="flex flex-col gap-2">
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeObstacleDragEnd(pillar)}>
-                <SortableContext items={pillar.visibleObstacles.map(o => o.id)} strategy={verticalListSortingStrategy}>
-                  {pillar.visibleObstacles.map((obs) => (
-                    <SortableObstacleCard
-                      key={obs.id}
-                      obstacle={obs}
-                      onUpdate={updateObstacle}
-                      isExpanded={isObstacleExpanded(obs.id)}
-                      onToggle={() => toggleObstacle(obs.id)}
+            {/* ─── Column 1: Vision ─── */}
+            {vision && (
+              <div className="flex flex-col items-center z-10 shrink-0" style={{ minWidth: 200, maxWidth: 240 }}>
+                <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
+                  <Badge className="bg-primary text-primary-foreground mb-2">
+                    Visão{" "}
+                    <InlineText
+                      value={String(vision.reference_year)}
+                      onSave={updateVisionYear}
+                      className="text-primary-foreground font-bold"
+                      inputClassName="w-16 text-foreground"
                     />
-                  ))}
-                </SortableContext>
-              </DndContext>
-              {newObstacles[pillar.id] ? (
-                <div className="min-w-[180px]">
+                  </Badge>
                   <InlineText
-                    value=""
-                    onSave={async (v) => { await addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
-                    placeholder="Descrição..."
-                    autoFocus
-                    className="text-xs"
+                    value={vision.text}
+                    onSave={updateVisionText}
+                    multiline
+                    className="text-xs leading-relaxed text-foreground block mt-1"
+                    inputClassName="text-xs"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* ─── Column 2: Pillars ─── */}
+            <div className="flex flex-col gap-3 z-10 shrink-0">
+              <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                {visibleData.map((pillar, idx) => (
+                  <DroppableZone key={pillar.id} id={pillar.id} type="pillar" isOver={overDropId === `drop-pillar-${pillar.id}`}>
+                    <SortablePillarCard
+                      pillar={pillar}
+                      idx={idx}
+                      onUpdate={updatePillar}
+                      isExpanded={isPillarExpanded(pillar.id)}
+                      onToggle={() => togglePillar(pillar.id)}
+                      obstacleCount={pillar.visibleObstacles.length}
+                      actionCount={pillar.visibleObstacles.reduce((sum, o) => sum + o.actions.length, 0)}
+                    />
+                  </DroppableZone>
+                ))}
+              </SortableContext>
+              {newPillar ? (
+                <div className="min-w-[160px]">
+                  <InlineText value="" onSave={async (v) => { await addPillar(v); setNewPillar(false); }} placeholder="Nome do pilar..." autoFocus className="text-xs font-semibold" />
+                </div>
               ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground h-6 gap-1 self-start"
-                  onClick={() => setNewObstacles(p => ({ ...p, [pillar.id]: true }))}
-                >
-                  <Plus className="h-3 w-3" /> Obstáculo
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7 gap-1 self-start" onClick={() => setNewPillar(true)}>
+                  <Plus className="h-3 w-3" /> Pilar
                 </Button>
               )}
             </div>
-          ))}
-        </div>
 
-        {/* ─── Column 4: Actions (only for expanded pillars + expanded obstacles) ─── */}
-        <div className="flex flex-col gap-3 z-10 shrink-0">
-          {visibleData.filter(p => isPillarExpanded(p.id)).flatMap((pillar) =>
-            pillar.visibleObstacles.filter(o => isObstacleExpanded(o.id)).map((obs) => (
-              <div key={obs.id} className="flex flex-col gap-2">
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeActionDragEnd(obs)}>
-                  <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
-                    {obs.actions.map((action) => (
-                      <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+            {/* ─── Column 3: Obstacles (only for expanded pillars) ─── */}
+            <div className="flex flex-col gap-3 z-10 shrink-0">
+              {visibleData.filter(p => isPillarExpanded(p.id)).map((pillar) => (
+                <div key={pillar.id} className="flex flex-col gap-2">
+                  <SortableContext items={pillar.visibleObstacles.map(o => o.id)} strategy={verticalListSortingStrategy}>
+                    {pillar.visibleObstacles.map((obs) => (
+                      <DroppableZone key={obs.id} id={obs.id} type="obstacle" isOver={overDropId === `drop-obstacle-${obs.id}`}>
+                        <SortableObstacleCard
+                          obstacle={obs}
+                          onUpdate={updateObstacle}
+                          isExpanded={isObstacleExpanded(obs.id)}
+                          onToggle={() => toggleObstacle(obs.id)}
+                        />
+                      </DroppableZone>
                     ))}
                   </SortableContext>
-                </DndContext>
-                {newActions[obs.id] ? (
-                  <div className="min-w-[260px]">
-                    <InlineText
-                      value=""
-                      onSave={async (v) => { await addAction(obs.id, v); setNewActions(p => ({ ...p, [obs.id]: false })); }}
-                      placeholder="Descrição da ação..."
-                      autoFocus
-                      className="text-xs"
-                    />
+                  {newObstacles[pillar.id] ? (
+                    <div className="min-w-[180px]">
+                      <InlineText
+                        value=""
+                        onSave={async (v) => { await addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
+                        placeholder="Descrição..."
+                        autoFocus
+                        className="text-xs"
+                      />
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground h-6 gap-1 self-start"
+                      onClick={() => setNewObstacles(p => ({ ...p, [pillar.id]: true }))}
+                    >
+                      <Plus className="h-3 w-3" /> Obstáculo
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* ─── Column 4: Actions (only for expanded pillars + expanded obstacles) ─── */}
+            <div className="flex flex-col gap-3 z-10 shrink-0">
+              {visibleData.filter(p => isPillarExpanded(p.id)).flatMap((pillar) =>
+                pillar.visibleObstacles.filter(o => isObstacleExpanded(o.id)).map((obs) => (
+                  <div key={obs.id} className="flex flex-col gap-2">
+                    <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
+                      {obs.actions.map((action) => (
+                        <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+                      ))}
+                    </SortableContext>
+                    {newActions[obs.id] ? (
+                      <div className="min-w-[260px]">
+                        <InlineText
+                          value=""
+                          onSave={async (v) => { await addAction(obs.id, v); setNewActions(p => ({ ...p, [obs.id]: false })); }}
+                          placeholder="Descrição da ação..."
+                          autoFocus
+                          className="text-xs"
+                        />
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground h-6 gap-1 self-start"
+                        onClick={() => setNewActions(p => ({ ...p, [obs.id]: true }))}
+                      >
+                        <Plus className="h-3 w-3" /> Ação
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground h-6 gap-1 self-start"
-                    onClick={() => setNewActions(p => ({ ...p, [obs.id]: true }))}
-                  >
-                    <Plus className="h-3 w-3" /> Ação
-                  </Button>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DndContext>
       </div>
+
+      {menuElement}
+      {confirmElement}
     </div>
   );
 }
