@@ -110,71 +110,64 @@ function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
 }
 
 // ─── Auto-scroll hook ───
-function useAutoScroll(scrollRef: React.RefObject<HTMLElement>, isDragging: boolean) {
-  const animRef = useRef<number>(0);
+function useEdgeScroll(containerRef: React.RefObject<HTMLElement>) {
+  const animFrameRef = useRef<number>(0);
+  const scrollSpeed = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    let mouseX = 0, mouseY = 0;
-    let isActive = false;
+    const EDGE_ZONE = 60;
 
-    const onMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      if (!isActive) {
-        isActive = true;
-        animRef.current = requestAnimationFrame(loop);
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const containerW = rect.width;
+      const containerH = rect.height;
+
+      let sx = 0, sy = 0;
+
+      if (mouseX < EDGE_ZONE && mouseX >= 0) {
+        sx = -Math.max(1, Math.floor((EDGE_ZONE - mouseX) / 7));
       }
+      if (mouseX > containerW - EDGE_ZONE && mouseX <= containerW) {
+        sx = Math.max(1, Math.floor((EDGE_ZONE - (containerW - mouseX)) / 7));
+      }
+      if (mouseY < EDGE_ZONE && mouseY >= 0) {
+        sy = -Math.max(1, Math.floor((EDGE_ZONE - mouseY) / 7));
+      }
+      if (mouseY > containerH - EDGE_ZONE && mouseY <= containerH) {
+        sy = Math.max(1, Math.floor((EDGE_ZONE - (containerH - mouseY)) / 7));
+      }
+
+      scrollSpeed.current = { x: sx, y: sy };
     };
 
-    const loop = () => {
-      const rect = el.getBoundingClientRect();
-      // Use tighter edge for hover-scroll, wider for drag
-      const edge = isDragging ? 80 : 60;
-      const maxSpeed = isDragging ? 15 : 8;
-      const minSpeed = isDragging ? 2 : 1;
-
-      const calc = (dist: number) => {
-        if (dist >= edge) return 0;
-        const t = 1 - dist / edge;
-        return minSpeed + (maxSpeed - minSpeed) * t;
-      };
-
-      const distL = mouseX - rect.left;
-      const distR = rect.right - mouseX;
-      const distT = mouseY - rect.top;
-      const distB = rect.bottom - mouseY;
-
-      let scrolled = false;
-      if (distL < edge && distL > 0) { el.scrollLeft -= calc(distL); scrolled = true; }
-      if (distR < edge && distR > 0) { el.scrollLeft += calc(distR); scrolled = true; }
-      if (distT < edge && distT > 0) { el.scrollTop -= calc(distT); scrolled = true; }
-      if (distB < edge && distB > 0) { el.scrollTop += calc(distB); scrolled = true; }
-
-      if (scrolled) {
-        animRef.current = requestAnimationFrame(loop);
-      } else {
-        isActive = false;
-      }
+    const handleMouseLeave = () => {
+      scrollSpeed.current = { x: 0, y: 0 };
     };
 
-    // Always listen for mousemove on the scroll container (hover scroll)
-    el.addEventListener("mousemove", onMove);
-    // During drag, also listen on window (cursor may leave container)
-    if (isDragging) {
-      window.addEventListener("mousemove", onMove);
-      isActive = true;
-      animRef.current = requestAnimationFrame(loop);
-    }
+    const tick = () => {
+      const { x, y } = scrollSpeed.current;
+      if (x !== 0 || y !== 0) {
+        container.scrollLeft += x;
+        container.scrollTop += y;
+      }
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    container.addEventListener("mousemove", handleMouseMove);
+    container.addEventListener("mouseleave", handleMouseLeave);
+    animFrameRef.current = requestAnimationFrame(tick);
 
     return () => {
-      el.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(animRef.current);
+      container.removeEventListener("mousemove", handleMouseMove);
+      container.removeEventListener("mouseleave", handleMouseLeave);
+      cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isDragging, scrollRef]);
+  }, [containerRef]);
 }
 
 // ─── Droppable wrapper for cross-group drops ───
@@ -309,7 +302,7 @@ export function MindMapLayout() {
   const [isDragging, setIsDragging] = useState(false);
   const [overDropId, setOverDropId] = useState<string | null>(null);
 
-  useAutoScroll(scrollRef, isDragging);
+  useEdgeScroll(scrollRef);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["strategic-map"] }), [qc]);
   const invalidateVision = useCallback(() => qc.invalidateQueries({ queryKey: ["vision"] }), [qc]);
