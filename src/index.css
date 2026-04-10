@@ -120,3 +120,21 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+/* Tiptap editor styles */
+.tiptap p {
+  margin: 0;
+}
+.tiptap p + p {
+  margin-top: 0.25em;
+}
+.tiptap strong {
+  font-weight: 700;
+}
+.tiptap em {
+  font-style: italic;
+}
+.tiptap mark {
+  border-radius: 2px;
+  padding: 0 2px;
+}
