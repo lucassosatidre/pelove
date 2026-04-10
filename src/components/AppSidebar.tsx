@@ -1,6 +1,7 @@
-import { Map, LogOut } from "lucide-react";
+import { Map, LogOut, Sun, Moon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
