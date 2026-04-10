@@ -215,7 +215,7 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
       ref={setNodeRef}
       style={customStyle}
       className={cn(
-        "bg-card rounded-xl shadow-sm border border-border border-l-4 p-3 min-w-[160px] max-w-[200px]",
+        "bg-card rounded-xl shadow-sm border border-border p-3 min-w-[160px] max-w-[200px]",
         isDragging && "opacity-50 shadow-lg z-20"
       )}
       data-node="pillar"
