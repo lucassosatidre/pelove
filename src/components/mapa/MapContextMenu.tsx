@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, Paintbrush, Bold, Type } from "lucide-react";
-import { resolveColor } from "@/lib/darkModeColors";
+
 import {
   AlertDialog,
   AlertDialogAction,
