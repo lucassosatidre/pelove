@@ -302,7 +302,7 @@ export function MindMapLayout() {
   const [isDragging, setIsDragging] = useState(false);
   const [overDropId, setOverDropId] = useState<string | null>(null);
 
-  useAutoScroll(scrollRef, isDragging);
+  useEdgeScroll(scrollRef);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ["strategic-map"] }), [qc]);
   const invalidateVision = useCallback(() => qc.invalidateQueries({ queryKey: ["vision"] }), [qc]);
