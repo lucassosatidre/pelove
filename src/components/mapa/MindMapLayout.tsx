@@ -573,7 +573,7 @@ export function MindMapLayout() {
                       inputClassName="w-16 text-foreground"
                     />
                   </Badge>
-                  <InlineText
+                  <RichInlineText
                     value={vision.text}
                     onSave={updateVisionText}
                     multiline
