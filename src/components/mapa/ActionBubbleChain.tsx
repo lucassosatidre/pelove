@@ -4,8 +4,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./InlineText";
+import { RichInlineText } from "./RichInlineText";
 import { StatusSelect } from "./StatusSelect";
 import { getComputedStatus, type Action } from "@/hooks/useStrategicData";
+import { resolveColor } from "@/lib/darkModeColors";
 
 const BUBBLE_WIDTHS: Record<string, string> = {
   action: "w-[200px]",
@@ -97,17 +99,17 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
         width={BUBBLE_WIDTHS.action}
         className={action.bg_color ? "" : undefined}
         style={{
-          ...(action.bg_color ? { backgroundColor: action.bg_color } : {}),
-          ...(action.text_color ? { color: action.text_color } : {}),
+          ...(action.bg_color ? { backgroundColor: resolveColor(action.bg_color, "bg")! } : {}),
+          ...(action.text_color ? { color: resolveColor(action.text_color, "text")! } : {}),
         }}
       >
-        <InlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className={cn("text-xs font-semibold", action.is_bold && "font-black")} />
+        <RichInlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className={cn("text-xs font-semibold", action.is_bold && "font-black")} />
       </Bubble>
 
       <BubbleConnector />
 
       <Bubble label="Resultado esperado" width={BUBBLE_WIDTHS.expected}>
-        <InlineText
+        <RichInlineText
           value={action.expected_result ?? ""}
           onSave={(v) => onUpdate(action.id, "expected_result", v || null)}
           placeholder="—"
@@ -118,7 +120,7 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
       <BubbleConnector />
 
       <Bubble label="Entregável" width={BUBBLE_WIDTHS.deliverable}>
-        <InlineText
+        <RichInlineText
           value={action.deliverable ?? ""}
           onSave={(v) => onUpdate(action.id, "deliverable", v || null)}
           placeholder="—"
