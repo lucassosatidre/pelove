@@ -34,8 +34,8 @@ function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | nul
   );
 }
 
-function Bubble({ label, children, className, borderColor, width }: {
-  label: string; children: React.ReactNode; className?: string; borderColor?: string; width?: string;
+function Bubble({ label, children, className, borderColor, width, style: extraStyle }: {
+  label: string; children: React.ReactNode; className?: string; borderColor?: string; width?: string; style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -45,7 +45,7 @@ function Bubble({ label, children, className, borderColor, width }: {
         width,
         className
       )}
-      style={borderColor ? { borderLeftColor: borderColor } : undefined}
+      style={{ ...(borderColor ? { borderLeftColor: borderColor } : {}), ...extraStyle }}
     >
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium block mb-1">{label}</span>
       <div className="text-xs flex-1">{children}</div>
@@ -91,8 +91,17 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
         <GripVertical className="h-3 w-3" />
       </button>
 
-      <Bubble label="Ação" borderColor="hsl(var(--primary))" width={BUBBLE_WIDTHS.action}>
-        <InlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className="text-xs font-semibold" />
+      <Bubble
+        label="Ação"
+        borderColor="hsl(var(--primary))"
+        width={BUBBLE_WIDTHS.action}
+        className={action.bg_color ? "" : undefined}
+        style={{
+          ...(action.bg_color ? { backgroundColor: action.bg_color } : {}),
+          ...(action.text_color ? { color: action.text_color } : {}),
+        }}
+      >
+        <InlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className={cn("text-xs font-semibold", action.is_bold && "font-black")} />
       </Bubble>
 
       <BubbleConnector />
