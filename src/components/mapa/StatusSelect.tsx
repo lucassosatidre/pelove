@@ -56,6 +56,6 @@ export function getRowBg(action: Action): string {
   return colors ? colors.bg : "";
 }
 
-export function getStatusDot(action: Action): string {
+export function getStatusDot(_action: Action): string {
   return "";
 }

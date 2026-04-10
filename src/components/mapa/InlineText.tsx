@@ -26,7 +26,7 @@ export function InlineText({
   placeholder = "Clique para definir",
   className,
   inputClassName,
-  multiline = false,
+  multiline: _multiline = false,
   autoFocus = false,
 }: InlineTextProps) {
   const [editing, setEditing] = useState(autoFocus);
