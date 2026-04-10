@@ -119,6 +119,7 @@ export function useMapContextMenu({ onDeletePillar, onDeleteObstacle, onDeleteAc
   };
 
   const isDark = document.documentElement.classList.contains("dark");
+  const getSwatchBg = (c: typeof BG_COLORS[number]) => c.value ? (isDark && c.dark ? c.dark : c.value) : "transparent";
 
   const menuElement = menu ? (
     <div
