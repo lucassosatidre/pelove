@@ -555,134 +555,146 @@ export function MindMapLayout() {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div ref={containerRef} className="relative flex items-start gap-16 p-8 min-w-max">
+          <div ref={containerRef} className="relative p-8 min-w-max">
             <Connectors refs={containerRef} />
 
-            {/* ─── Column 1: Vision ─── */}
-            {vision && (
-              <div className="flex flex-col items-center z-10 shrink-0" style={{ minWidth: 200, maxWidth: 240 }}>
-                <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
-                  <Badge className="bg-primary text-primary-foreground mb-2">
-                    Visão{" "}
-                    <InlineText
-                      value={String(vision.reference_year)}
-                      onSave={updateVisionYear}
-                      className="text-primary-foreground font-bold"
-                      inputClassName="w-16 text-foreground"
-                    />
-                  </Badge>
-                  <RichInlineText
-                    value={vision.text}
-                    onSave={updateVisionText}
-                    multiline
-                    className="text-xs leading-relaxed text-foreground block mt-1"
-                    inputClassName="text-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ─── Column 2: Pillars ─── */}
-            <div className="flex flex-col gap-3 z-10 shrink-0">
-              <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                {visibleData.map((pillar, idx) => (
-                  <DroppableZone key={pillar.id} id={pillar.id} type="pillar" isOver={overDropId === `drop-pillar-${pillar.id}`}>
-                    <SortablePillarCard
-                      pillar={pillar}
-                      idx={idx}
-                      onUpdate={updatePillar}
-                      isExpanded={isPillarExpanded(pillar.id)}
-                      onToggle={() => togglePillar(pillar.id)}
-                      obstacleCount={pillar.visibleObstacles.length}
-                      actionCount={pillar.visibleObstacles.reduce((sum, o) => sum + o.actions.length, 0)}
-                    />
-                  </DroppableZone>
-                ))}
-              </SortableContext>
-              {newPillar ? (
-                <div className="min-w-[160px]">
-                  <InlineText value="" onSave={async (v) => { await addPillar(v); setNewPillar(false); }} placeholder="Nome do pilar..." autoFocus className="text-xs font-semibold" />
-                </div>
-              ) : (
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7 gap-1 self-start" onClick={() => setNewPillar(true)}>
-                  <Plus className="h-3 w-3" /> Pilar
-                </Button>
-              )}
-            </div>
-
-            {/* ─── Column 3: Obstacles (only for expanded pillars) ─── */}
-            <div className="flex flex-col gap-3 z-10 shrink-0">
-              {visibleData.filter(p => isPillarExpanded(p.id)).map((pillar) => (
-                <div key={pillar.id} className="flex flex-col gap-2">
-                  <SortableContext items={pillar.visibleObstacles.map(o => o.id)} strategy={verticalListSortingStrategy}>
-                    {pillar.visibleObstacles.map((obs) => (
-                      <DroppableZone key={obs.id} id={obs.id} type="obstacle" isOver={overDropId === `drop-obstacle-${obs.id}`}>
-                        <SortableObstacleCard
-                          obstacle={obs}
-                          onUpdate={updateObstacle}
-                          isExpanded={isObstacleExpanded(obs.id)}
-                          onToggle={() => toggleObstacle(obs.id)}
-                        />
-                      </DroppableZone>
-                    ))}
-                  </SortableContext>
-                  {newObstacles[pillar.id] ? (
-                    <div className="min-w-[180px]">
+            <div className="flex items-start gap-16">
+              {/* ─── Column 1: Vision ─── */}
+              {vision && (
+                <div className="flex flex-col items-center z-10 shrink-0 self-start" style={{ minWidth: 200, maxWidth: 240 }}>
+                  <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
+                    <Badge className="bg-primary text-primary-foreground mb-2">
+                      Visão{" "}
                       <InlineText
-                        value=""
-                        onSave={async (v) => { await addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
-                        placeholder="Descrição..."
-                        autoFocus
-                        className="text-xs"
+                        value={String(vision.reference_year)}
+                        onSave={updateVisionYear}
+                        className="text-primary-foreground font-bold"
+                        inputClassName="w-16 text-foreground"
                       />
-                    </div>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-muted-foreground h-6 gap-1 self-start"
-                      onClick={() => setNewObstacles(p => ({ ...p, [pillar.id]: true }))}
-                    >
-                      <Plus className="h-3 w-3" /> Obstáculo
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* ─── Column 4: Actions (only for expanded pillars + expanded obstacles) ─── */}
-            <div className="flex flex-col gap-3 z-10 shrink-0">
-              {visibleData.filter(p => isPillarExpanded(p.id)).flatMap((pillar) =>
-                pillar.visibleObstacles.filter(o => isObstacleExpanded(o.id)).map((obs) => (
-                  <div key={obs.id} className="flex flex-col gap-2">
-                    <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
-                      {obs.actions.map((action) => (
-                        <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
-                      ))}
-                    </SortableContext>
-                    {newActions[obs.id] ? (
-                      <div className="min-w-[260px]">
-                        <InlineText
-                          value=""
-                          onSave={async (v) => { await addAction(obs.id, v); setNewActions(p => ({ ...p, [obs.id]: false })); }}
-                          placeholder="Descrição da ação..."
-                          autoFocus
-                          className="text-xs"
-                        />
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-muted-foreground h-6 gap-1 self-start"
-                        onClick={() => setNewActions(p => ({ ...p, [obs.id]: true }))}
-                      >
-                        <Plus className="h-3 w-3" /> Ação
-                      </Button>
-                    )}
+                    </Badge>
+                    <RichInlineText
+                      value={vision.text}
+                      onSave={updateVisionText}
+                      multiline
+                      className="text-xs leading-relaxed text-foreground block mt-1"
+                      inputClassName="text-xs"
+                    />
                   </div>
-                ))
+                </div>
               )}
+
+              {/* ─── Rows: each pillar + its obstacles + actions ─── */}
+              <div className="flex flex-col gap-3 z-10">
+                <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                  {visibleData.map((pillar, idx) => {
+                    const expanded = isPillarExpanded(pillar.id);
+                    return (
+                      <div key={pillar.id} className="flex items-start gap-10">
+                        {/* Pillar card */}
+                        <div className="shrink-0">
+                          <DroppableZone id={pillar.id} type="pillar" isOver={overDropId === `drop-pillar-${pillar.id}`}>
+                            <SortablePillarCard
+                              pillar={pillar}
+                              idx={idx}
+                              onUpdate={updatePillar}
+                              isExpanded={expanded}
+                              onToggle={() => togglePillar(pillar.id)}
+                              obstacleCount={pillar.visibleObstacles.length}
+                              actionCount={pillar.visibleObstacles.reduce((sum, o) => sum + o.actions.length, 0)}
+                            />
+                          </DroppableZone>
+                        </div>
+
+                        {/* Obstacles for this pillar */}
+                        {expanded && (
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <SortableContext items={pillar.visibleObstacles.map(o => o.id)} strategy={verticalListSortingStrategy}>
+                              {pillar.visibleObstacles.map((obs) => {
+                                const obsExpanded = isObstacleExpanded(obs.id);
+                                return (
+                                  <div key={obs.id} className="flex items-start gap-10">
+                                    {/* Obstacle card */}
+                                    <div className="shrink-0">
+                                      <DroppableZone id={obs.id} type="obstacle" isOver={overDropId === `drop-obstacle-${obs.id}`}>
+                                        <SortableObstacleCard
+                                          obstacle={obs}
+                                          onUpdate={updateObstacle}
+                                          isExpanded={obsExpanded}
+                                          onToggle={() => toggleObstacle(obs.id)}
+                                        />
+                                      </DroppableZone>
+                                    </div>
+
+                                    {/* Actions for this obstacle */}
+                                    {obsExpanded && (
+                                      <div className="flex flex-col gap-2 shrink-0">
+                                        <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
+                                          {obs.actions.map((action) => (
+                                            <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+                                          ))}
+                                        </SortableContext>
+                                        {newActions[obs.id] ? (
+                                          <div className="min-w-[260px]">
+                                            <InlineText
+                                              value=""
+                                              onSave={async (v) => { await addAction(obs.id, v); setNewActions(p => ({ ...p, [obs.id]: false })); }}
+                                              placeholder="Descrição da ação..."
+                                              autoFocus
+                                              className="text-xs"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-xs text-muted-foreground h-6 gap-1 self-start"
+                                            onClick={() => setNewActions(p => ({ ...p, [obs.id]: true }))}
+                                          >
+                                            <Plus className="h-3 w-3" /> Ação
+                                          </Button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </SortableContext>
+                            {newObstacles[pillar.id] ? (
+                              <div className="min-w-[180px]">
+                                <InlineText
+                                  value=""
+                                  onSave={async (v) => { await addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
+                                  placeholder="Descrição..."
+                                  autoFocus
+                                  className="text-xs"
+                                />
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-muted-foreground h-6 gap-1 self-start"
+                                onClick={() => setNewObstacles(p => ({ ...p, [pillar.id]: true }))}
+                              >
+                                <Plus className="h-3 w-3" /> Obstáculo
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </SortableContext>
+                {newPillar ? (
+                  <div className="min-w-[160px]">
+                    <InlineText value="" onSave={async (v) => { await addPillar(v); setNewPillar(false); }} placeholder="Nome do pilar..." autoFocus className="text-xs font-semibold" />
+                  </div>
+                ) : (
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7 gap-1 self-start" onClick={() => setNewPillar(true)}>
+                    <Plus className="h-3 w-3" /> Pilar
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </DndContext>
