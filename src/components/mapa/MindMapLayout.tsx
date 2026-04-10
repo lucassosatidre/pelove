@@ -202,12 +202,10 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: pillar.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
-  const borderVar = `hsl(var(--pillar-${(idx % 6) + 1}))`;
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
   const customStyle: React.CSSProperties = {
     ...style,
-    borderLeftColor: borderVar,
     ...(pillar.bg_color ? { backgroundColor: resolveColor(pillar.bg_color, "bg")! } : {}),
     ...(pillar.text_color ? { color: resolveColor(pillar.text_color, "text")! } : {}),
   };
