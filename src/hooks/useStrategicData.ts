@@ -18,6 +18,9 @@ export interface Action {
   reliability: number | null;
   priority_score: number | null;
   execution_order: number | null;
+  bg_color: string | null;
+  text_color: string | null;
+  is_bold: boolean | null;
 }
 
 export interface Obstacle {
@@ -26,6 +29,9 @@ export interface Obstacle {
   code: string;
   description: string | null;
   display_order: number;
+  bg_color: string | null;
+  text_color: string | null;
+  is_bold: boolean | null;
   actions: Action[];
 }
 
@@ -34,6 +40,9 @@ export interface Pillar {
   number: number;
   name: string;
   display_order: number;
+  bg_color: string | null;
+  text_color: string | null;
+  is_bold: boolean | null;
   obstacles: Obstacle[];
 }
 

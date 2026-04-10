@@ -34,8 +34,8 @@ function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | nul
   );
 }
 
-function Bubble({ label, children, className, borderColor, width }: {
-  label: string; children: React.ReactNode; className?: string; borderColor?: string; width?: string;
+function Bubble({ label, children, className, borderColor, width, style: extraStyle }: {
+  label: string; children: React.ReactNode; className?: string; borderColor?: string; width?: string; style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -45,7 +45,7 @@ function Bubble({ label, children, className, borderColor, width }: {
         width,
         className
       )}
-      style={borderColor ? { borderLeftColor: borderColor } : undefined}
+      style={{ ...(borderColor ? { borderLeftColor: borderColor } : {}), ...extraStyle }}
     >
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium block mb-1">{label}</span>
       <div className="text-xs flex-1">{children}</div>
