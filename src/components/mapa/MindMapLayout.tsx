@@ -208,8 +208,8 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
   const customStyle: React.CSSProperties = {
     ...style,
     borderLeftColor: borderVar,
-    ...(pillar.bg_color ? { backgroundColor: pillar.bg_color } : {}),
-    ...(pillar.text_color ? { color: pillar.text_color } : {}),
+    ...(pillar.bg_color ? { backgroundColor: resolveColor(pillar.bg_color, "bg")! } : {}),
+    ...(pillar.text_color ? { color: resolveColor(pillar.text_color, "text")! } : {}),
   };
 
   return (
@@ -228,7 +228,7 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <div className="flex-1 min-w-0">
-          <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className={cn("text-xs font-semibold", pillar.is_bold && "font-black")} />
+          <RichInlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className={cn("text-xs font-semibold", pillar.is_bold && "font-black")} />
           {!isExpanded && (
             <span className="text-[10px] text-muted-foreground block mt-0.5">
               {obstacleCount} obst. · {actionCount} ações
