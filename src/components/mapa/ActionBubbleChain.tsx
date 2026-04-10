@@ -91,8 +91,17 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate }: ActionBubble
         <GripVertical className="h-3 w-3" />
       </button>
 
-      <Bubble label="Ação" borderColor="hsl(var(--primary))" width={BUBBLE_WIDTHS.action}>
-        <InlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className="text-xs font-semibold" />
+      <Bubble
+        label="Ação"
+        borderColor="hsl(var(--primary))"
+        width={BUBBLE_WIDTHS.action}
+        className={action.bg_color ? "" : undefined}
+        style={{
+          ...(action.bg_color ? { backgroundColor: action.bg_color } : {}),
+          ...(action.text_color ? { color: action.text_color } : {}),
+        }}
+      >
+        <InlineText value={action.description} onSave={(v) => onUpdate(action.id, "description", v)} className={cn("text-xs font-semibold", action.is_bold && "font-black")} />
       </Bubble>
 
       <BubbleConnector />

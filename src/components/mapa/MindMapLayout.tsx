@@ -116,17 +116,23 @@ function useAutoScroll(scrollRef: React.RefObject<HTMLElement>, isDragging: bool
     if (!el) return;
 
     let mouseX = 0, mouseY = 0;
+    let isActive = false;
 
     const onMove = (e: MouseEvent) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
+      if (!isActive) {
+        isActive = true;
+        animRef.current = requestAnimationFrame(loop);
+      }
     };
 
     const loop = () => {
       const rect = el.getBoundingClientRect();
-      const edge = 80;
-      const maxSpeed = 15;
-      const minSpeed = 2;
+      // Use tighter edge for hover-scroll, wider for drag
+      const edge = isDragging ? 80 : 60;
+      const maxSpeed = isDragging ? 15 : 8;
+      const minSpeed = isDragging ? 2 : 1;
 
       const calc = (dist: number) => {
         if (dist >= edge) return 0;
@@ -139,20 +145,30 @@ function useAutoScroll(scrollRef: React.RefObject<HTMLElement>, isDragging: bool
       const distT = mouseY - rect.top;
       const distB = rect.bottom - mouseY;
 
-      if (distL < edge && distL > 0) el.scrollLeft -= calc(distL);
-      if (distR < edge && distR > 0) el.scrollLeft += calc(distR);
-      if (distT < edge && distT > 0) el.scrollTop -= calc(distT);
-      if (distB < edge && distB > 0) el.scrollTop += calc(distB);
+      let scrolled = false;
+      if (distL < edge && distL > 0) { el.scrollLeft -= calc(distL); scrolled = true; }
+      if (distR < edge && distR > 0) { el.scrollLeft += calc(distR); scrolled = true; }
+      if (distT < edge && distT > 0) { el.scrollTop -= calc(distT); scrolled = true; }
+      if (distB < edge && distB > 0) { el.scrollTop += calc(distB); scrolled = true; }
 
-      animRef.current = requestAnimationFrame(loop);
+      if (scrolled) {
+        animRef.current = requestAnimationFrame(loop);
+      } else {
+        isActive = false;
+      }
     };
 
+    // Always listen for mousemove on the scroll container (hover scroll)
+    el.addEventListener("mousemove", onMove);
+    // During drag, also listen on window (cursor may leave container)
     if (isDragging) {
       window.addEventListener("mousemove", onMove);
+      isActive = true;
       animRef.current = requestAnimationFrame(loop);
     }
 
     return () => {
+      el.removeEventListener("mousemove", onMove);
       window.removeEventListener("mousemove", onMove);
       cancelAnimationFrame(animRef.current);
     };
@@ -187,10 +203,17 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
   const borderVar = `hsl(var(--pillar-${(idx % 6) + 1}))`;
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
+  const customStyle: React.CSSProperties = {
+    ...style,
+    borderLeftColor: borderVar,
+    ...(pillar.bg_color ? { backgroundColor: pillar.bg_color } : {}),
+    ...(pillar.text_color ? { color: pillar.text_color } : {}),
+  };
+
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, borderLeftColor: borderVar }}
+      style={customStyle}
       className={cn(
         "bg-card rounded-xl shadow-sm border border-border border-l-4 p-3 min-w-[160px] max-w-[200px]",
         isDragging && "opacity-50 shadow-lg z-20"
@@ -203,7 +226,7 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <div className="flex-1 min-w-0">
-          <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className="text-xs font-semibold" />
+          <InlineText value={pillar.name} onSave={(v) => onUpdate(pillar.id, v)} className={cn("text-xs font-semibold", pillar.is_bold && "font-black")} />
           {!isExpanded && (
             <span className="text-[10px] text-muted-foreground block mt-0.5">
               {obstacleCount} obst. · {actionCount} ações
@@ -227,13 +250,19 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
     id: obstacle.id,
     data: { type: "obstacle", pillarId: obstacle.pillar_id },
   });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  const baseStyle = { transform: CSS.Transform.toString(transform), transition };
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
+
+  const customStyle: React.CSSProperties = {
+    ...baseStyle,
+    ...(obstacle.bg_color ? { backgroundColor: obstacle.bg_color } : {}),
+    ...(obstacle.text_color ? { color: obstacle.text_color } : {}),
+  };
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={customStyle}
       className={cn(
         "bg-card rounded-lg border border-border p-2.5 min-w-[180px] max-w-[220px]",
         isDragging && "opacity-50 shadow-lg z-20"
@@ -251,7 +280,7 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
             value={obstacle.description ?? ""}
             onSave={(v) => onUpdate(obstacle.id, "description", v)}
             placeholder="Clique para definir"
-            className="text-xs"
+            className={cn("text-xs", obstacle.is_bold && "font-black")}
           />
           {!isExpanded && obstacle.actions.length > 0 && (
             <span className="text-[10px] text-muted-foreground block mt-0.5">
