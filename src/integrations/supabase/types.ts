@@ -17,6 +17,7 @@ export type Database = {
       actions: {
         Row: {
           area: string | null
+          bg_color: string | null
           created_at: string | null
           deadline: string | null
           deliverable: string | null
@@ -25,16 +26,19 @@ export type Database = {
           expected_result: string | null
           id: string
           importance: number | null
+          is_bold: boolean | null
           obstacle_id: string
           priority_score: number | null
           reliability: number | null
           responsible: string | null
           status: string
+          text_color: string | null
           updated_at: string | null
           urgency: number | null
         }
         Insert: {
           area?: string | null
+          bg_color?: string | null
           created_at?: string | null
           deadline?: string | null
           deliverable?: string | null
@@ -43,16 +47,19 @@ export type Database = {
           expected_result?: string | null
           id?: string
           importance?: number | null
+          is_bold?: boolean | null
           obstacle_id: string
           priority_score?: number | null
           reliability?: number | null
           responsible?: string | null
           status?: string
+          text_color?: string | null
           updated_at?: string | null
           urgency?: number | null
         }
         Update: {
           area?: string | null
+          bg_color?: string | null
           created_at?: string | null
           deadline?: string | null
           deliverable?: string | null
@@ -61,11 +68,13 @@ export type Database = {
           expected_result?: string | null
           id?: string
           importance?: number | null
+          is_bold?: boolean | null
           obstacle_id?: string
           priority_score?: number | null
           reliability?: number | null
           responsible?: string | null
           status?: string
+          text_color?: string | null
           updated_at?: string | null
           urgency?: number | null
         }
@@ -81,30 +90,39 @@ export type Database = {
       }
       obstacles: {
         Row: {
+          bg_color: string | null
           code: string
           created_at: string | null
           description: string | null
           display_order: number
           id: string
+          is_bold: boolean | null
           pillar_id: string
+          text_color: string | null
           updated_at: string | null
         }
         Insert: {
+          bg_color?: string | null
           code: string
           created_at?: string | null
           description?: string | null
           display_order?: number
           id?: string
+          is_bold?: boolean | null
           pillar_id: string
+          text_color?: string | null
           updated_at?: string | null
         }
         Update: {
+          bg_color?: string | null
           code?: string
           created_at?: string | null
           description?: string | null
           display_order?: number
           id?: string
+          is_bold?: boolean | null
           pillar_id?: string
+          text_color?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -119,27 +137,36 @@ export type Database = {
       }
       pillars: {
         Row: {
+          bg_color: string | null
           created_at: string | null
           display_order: number
           id: string
+          is_bold: boolean | null
           name: string
           number: number
+          text_color: string | null
           updated_at: string | null
         }
         Insert: {
+          bg_color?: string | null
           created_at?: string | null
           display_order: number
           id?: string
+          is_bold?: boolean | null
           name: string
           number: number
+          text_color?: string | null
           updated_at?: string | null
         }
         Update: {
+          bg_color?: string | null
           created_at?: string | null
           display_order?: number
           id?: string
+          is_bold?: boolean | null
           name?: string
           number?: number
+          text_color?: string | null
           updated_at?: string | null
         }
         Relationships: []

@@ -362,11 +362,26 @@ export function MindMapLayout() {
     invalidate();
   }, [invalidate]);
 
+  // ─── Style update handler ───
+  const updateStyle = useCallback(async (type: "pillar" | "obstacle" | "action", id: string, field: string, value: any) => {
+    const table = type === "pillar" ? "pillars" : type === "obstacle" ? "obstacles" : "actions";
+    if (field === "is_bold") {
+      // Toggle: fetch current then flip
+      const { data } = await supabase.from(table).select("is_bold").eq("id", id).single();
+      const current = (data as any)?.is_bold ?? false;
+      await supabase.from(table).update({ is_bold: !current }).eq("id", id);
+    } else {
+      await supabase.from(table).update({ [field]: value }).eq("id", id);
+    }
+    invalidate();
+  }, [invalidate]);
+
   // ─── Context menu ───
   const { handleContextMenu, menuElement, confirmElement } = useMapContextMenu({
     onDeletePillar: deletePillar,
     onDeleteObstacle: deleteObstacle,
     onDeleteAction: deleteAction,
+    onUpdateStyle: updateStyle,
   });
 
   // ─── Unified DnD handlers ───
