@@ -1,6 +1,7 @@
-import { Map, LogOut } from "lucide-react";
+import { Map, LogOut, Sun, Moon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -22,6 +23,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile, signOut } = useAuth();
+  const { dark, toggle } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -37,10 +39,17 @@ export function AppSidebar() {
             <span className="text-sidebar-primary-foreground font-bold text-sm">PE</span>
           </div>
           {!collapsed && (
-            <span className="font-bold text-sidebar-foreground text-lg">
+            <span className="font-bold text-sidebar-foreground text-lg flex-1">
               PE <span className="text-sidebar-primary">Love</span>
             </span>
           )}
+          <button
+            onClick={toggle}
+            className="h-8 w-8 flex items-center justify-center rounded-md text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent transition-colors shrink-0"
+            title={dark ? "Modo claro" : "Modo escuro"}
+          >
+            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </div>
         <SidebarGroup>
           <SidebarGroupContent>
