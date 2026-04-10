@@ -257,8 +257,8 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
 
   const customStyle: React.CSSProperties = {
     ...baseStyle,
-    ...(obstacle.bg_color ? { backgroundColor: obstacle.bg_color } : {}),
-    ...(obstacle.text_color ? { color: obstacle.text_color } : {}),
+    ...(obstacle.bg_color ? { backgroundColor: resolveColor(obstacle.bg_color, "bg")! } : {}),
+    ...(obstacle.text_color ? { color: resolveColor(obstacle.text_color, "text")! } : {}),
   };
 
   return (
@@ -278,7 +278,7 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
           <GripVertical className="h-3 w-3" />
         </button>
         <div className="flex-1 min-w-0">
-          <InlineText
+          <RichInlineText
             value={obstacle.description ?? ""}
             onSave={(v) => onUpdate(obstacle.id, "description", v)}
             placeholder="Clique para definir"
