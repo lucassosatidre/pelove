@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
-import Color from "@tiptap/extension-color";
-import TextStyle from "@tiptap/extension-text-style";
-import Highlight from "@tiptap/extension-highlight";
+import { Color, TextStyle } from "@tiptap/extension-text-style";
+import { Highlight } from "@tiptap/extension-highlight";
 import { cn } from "@/lib/utils";
 
 interface RichInlineTextProps {
