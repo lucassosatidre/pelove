@@ -116,7 +116,7 @@ function TiptapEditor({
     <div className="relative">
       <BubbleMenu
         editor={editor}
-        options={{ duration: 100, placement: "top" }}
+        options={{ placement: "top" }}
         className="flex items-center gap-0.5 bg-[#1A1A1A] border border-[#333] rounded-lg shadow-lg px-1.5 py-1"
       >
         <button
