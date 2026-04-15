@@ -2,8 +2,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
-import { Color, TextStyle } from "@tiptap/extension-text-style";
-import { Highlight } from "@tiptap/extension-highlight";
 import { cn } from "@/lib/utils";
 
 interface RichInlineTextProps {
@@ -20,25 +18,10 @@ function isHtml(str: string): boolean {
   return /<[a-z][\s\S]*>/i.test(str);
 }
 
-const TEXT_COLORS = [
-  { label: "Preto", value: "#000000" },
-  { label: "Branco", value: "#FFFFFF" },
-  { label: "Laranja", value: "#F97316" },
-  { label: "Vermelho", value: "#EF4444" },
-  { label: "Verde", value: "#22C55E" },
-  { label: "Azul", value: "#3B82F6" },
-  { label: "Amarelo", value: "#EAB308" },
-  { label: "Roxo", value: "#8B5CF6" },
-];
-
-const HIGHLIGHT_COLORS = [
-  { label: "Amarelo", value: "#FEF9C3" },
-  { label: "Verde", value: "#DCFCE7" },
-  { label: "Azul", value: "#DBEAFE" },
-  { label: "Rosa", value: "#FCE7F3" },
-  { label: "Laranja", value: "#FED7AA" },
-  { label: "Sem destaque", value: null },
-];
+function stripInlineColors(html: string): string {
+  // Remove color and background-color inline styles from saved HTML
+  return html.replace(/\s*(color|background-color)\s*:\s*[^;"]+;?/gi, "");
+}
 
 function TiptapEditor({
   initialContent,
@@ -51,18 +34,13 @@ function TiptapEditor({
   onCancel: () => void;
   inputClassName?: string;
 }) {
-  const [colorMenuOpen, setColorMenuOpen] = useState(false);
-  const [highlightMenuOpen, setHighlightMenuOpen] = useState(false);
   const savedRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false, codeBlock: false, blockquote: false, horizontalRule: false }),
-      TextStyle,
-      Color,
-      Highlight.configure({ multicolor: true }),
     ],
-    content: isHtml(initialContent) ? initialContent : `<p>${initialContent}</p>`,
+    content: isHtml(initialContent) ? stripInlineColors(initialContent) : `<p>${initialContent}</p>`,
     editorProps: {
       attributes: {
         class: cn(
@@ -91,16 +69,13 @@ function TiptapEditor({
     if (savedRef.current || !editor) return;
     savedRef.current = true;
     const html = editor.getHTML();
-    // Convert empty content to empty string
     const isEmpty = html === "<p></p>" || html === "";
     onSave(isEmpty ? "" : html);
   }, [editor, onSave]);
 
-  // Save on blur
   useEffect(() => {
     if (!editor) return;
     const handler = () => {
-      // Small delay to allow bubble menu clicks
       setTimeout(() => {
         if (editor.isFocused) return;
         doSave();
@@ -133,97 +108,6 @@ function TiptapEditor({
         >
           I
         </button>
-
-        {/* Text color */}
-        <div className="relative">
-          <button
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); setColorMenuOpen(!colorMenuOpen); setHighlightMenuOpen(false); }}
-            className="px-1.5 py-0.5 rounded text-xs text-white hover:bg-white/20 flex flex-col items-center leading-none"
-          >
-            <span>A</span>
-            <span className="w-3 h-0.5 rounded-full bg-[#F97316] mt-px" />
-          </button>
-          {colorMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1.5 z-50">
-              {TEXT_COLORS.map((c) => {
-                const isActive = editor.isActive("textStyle", { color: c.value });
-                return (
-                  <button
-                    key={c.value}
-                    title={c.label}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      editor.chain().focus().setColor(c.value).run();
-                      setColorMenuOpen(false);
-                    }}
-                    className={cn(
-                      "h-7 w-7 rounded-md border border-border transition-transform hover:scale-110",
-                      isActive && "ring-2 ring-white"
-                    )}
-                    style={{ backgroundColor: c.value }}
-                  />
-                );
-              })}
-              <button
-                type="button"
-                title="Remover cor"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  editor.chain().focus().unsetColor().run();
-                  setColorMenuOpen(false);
-                }}
-                className="h-7 w-7 rounded-md border border-border bg-popover text-popover-foreground flex items-center justify-center transition-transform hover:scale-110 text-xs font-bold"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Highlight */}
-        <div className="relative">
-          <button
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); setHighlightMenuOpen(!highlightMenuOpen); setColorMenuOpen(false); }}
-            className="px-1.5 py-0.5 rounded text-xs text-white hover:bg-white/20"
-            title="Highlight"
-          >
-            <span className="bg-yellow-200/40 px-0.5 rounded">H</span>
-          </button>
-          {highlightMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1.5 z-50">
-              {HIGHLIGHT_COLORS.map((c) => {
-                const isActive = c.value ? editor.isActive("highlight", { color: c.value }) : false;
-                return (
-                  <button
-                    key={c.label}
-                    title={c.label}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      if (c.value) {
-                        editor.chain().focus().setHighlight({ color: c.value }).run();
-                      } else {
-                        editor.chain().focus().unsetHighlight().run();
-                      }
-                      setHighlightMenuOpen(false);
-                    }}
-                    className={cn(
-                      "h-7 w-7 rounded-md border border-border transition-transform hover:scale-110",
-                      isActive && "ring-2 ring-white",
-                      !c.value && "flex items-center justify-center text-xs font-bold text-popover-foreground"
-                    )}
-                    style={{ backgroundColor: c.value ?? undefined }}
-                  >
-                    {!c.value && "✕"}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </BubbleMenu>
       <EditorContent editor={editor} />
     </div>
@@ -283,7 +167,7 @@ export function RichInlineText({
       )}
     >
       {displayHtml ? (
-        <span dangerouslySetInnerHTML={{ __html: value }} className="prose prose-sm max-w-none [&_p]:m-0" />
+        <span dangerouslySetInnerHTML={{ __html: stripInlineColors(value) }} className="prose prose-sm max-w-none [&_p]:m-0" />
       ) : (
         hasContent ? value : placeholder
       )}
