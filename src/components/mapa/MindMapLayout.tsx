@@ -301,6 +301,14 @@ export function MindMapLayout() {
   const { isPillarExpanded, isObstacleExpanded, togglePillar, toggleObstacle, expandAll, collapseAll } = useCollapseState();
   const [isDragging, setIsDragging] = useState(false);
   const [overDropId, setOverDropId] = useState<string | null>(null);
+  const [visionCollapsed, setVisionCollapsed] = useState(() => {
+    try { return localStorage.getItem("pe-love-vision-collapsed") === "true"; } catch { return false; }
+  });
+  const toggleVision = () => setVisionCollapsed(prev => {
+    const next = !prev;
+    try { localStorage.setItem("pe-love-vision-collapsed", String(next)); } catch {}
+    return next;
+  });
 
   useEdgeScroll(scrollRef);
 
