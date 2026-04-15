@@ -189,30 +189,27 @@ function DroppableZone({ id, type, children, isOver }: { id: string; type: strin
 }
 
 // ─── Sortable Pillar Card ───
-function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obstacleCount, actionCount }: {
-  pillar: Pillar; idx: number; onUpdate: (id: string, name: string) => Promise<void>;
+function SortablePillarCard({ pillar, onUpdate, onUpdateColor, isExpanded, onToggle, obstacleCount, actionCount }: {
+  pillar: Pillar; onUpdate: (id: string, name: string) => Promise<void>;
+  onUpdateColor: (color: string | null) => Promise<void>;
   isExpanded: boolean; onToggle: () => void; obstacleCount: number; actionCount: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: pillar.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
-  const customStyle: React.CSSProperties = {
-    ...style,
-    ...(pillar.bg_color ? { backgroundColor: resolveColor(pillar.bg_color, "bg")! } : {}),
-    ...(pillar.text_color ? { color: resolveColor(pillar.text_color, "text")! } : {}),
-  };
-
   return (
     <div
       ref={setNodeRef}
-      style={customStyle}
+      style={style}
       className={cn(
         "bg-card rounded-xl shadow-sm border border-border p-3 min-w-[160px] max-w-[200px]",
+        pillar.bg_color && "border-l-4",
         isDragging && "opacity-50 shadow-lg z-20"
       )}
       data-node="pillar"
       data-id={pillar.id}
+      {...(pillar.bg_color ? { style: { ...style, borderLeftColor: pillar.bg_color } } : {})}
     >
       <div className="flex items-start gap-1">
         <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mt-0.5">
@@ -226,6 +223,7 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
             </span>
           )}
         </div>
+        <PillarColorPicker currentColor={pillar.bg_color} onSelect={onUpdateColor} />
         <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
           <ChevronIcon className="h-3.5 w-3.5" />
         </button>
