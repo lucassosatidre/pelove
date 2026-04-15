@@ -559,9 +559,6 @@ export function MindMapLayout() {
           </div>
         </div>
       )}
-          </div>
-        </div>
-      )}
 
       {/* ─── Right: Scrollable map area ─── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
