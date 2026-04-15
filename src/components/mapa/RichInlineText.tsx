@@ -145,21 +145,39 @@ function TiptapEditor({
             <span className="w-3 h-0.5 rounded-full bg-[#F97316] mt-px" />
           </button>
           {colorMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-1 bg-[#1A1A1A] border border-[#333] rounded-lg shadow-lg p-1.5 grid grid-cols-4 gap-1 z-50">
-              {TEXT_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  title={c.label}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    editor.chain().focus().setColor(c.value).run();
-                    setColorMenuOpen(false);
-                  }}
-                  className="h-5 w-5 rounded border border-[#444] hover:ring-2 hover:ring-primary"
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
+            <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1.5 z-50">
+              {TEXT_COLORS.map((c) => {
+                const isActive = editor.isActive("textStyle", { color: c.value });
+                return (
+                  <button
+                    key={c.value}
+                    title={c.label}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      editor.chain().focus().setColor(c.value).run();
+                      setColorMenuOpen(false);
+                    }}
+                    className={cn(
+                      "h-7 w-7 rounded-md border border-border transition-transform hover:scale-110",
+                      isActive && "ring-2 ring-white"
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                );
+              })}
+              <button
+                type="button"
+                title="Remover cor"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().unsetColor().run();
+                  setColorMenuOpen(false);
+                }}
+                className="h-7 w-7 rounded-md border border-border bg-popover text-popover-foreground flex items-center justify-center transition-transform hover:scale-110 text-xs font-bold"
+              >
+                ✕
+              </button>
             </div>
           )}
         </div>
@@ -175,25 +193,34 @@ function TiptapEditor({
             <span className="bg-yellow-200/40 px-0.5 rounded">H</span>
           </button>
           {highlightMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-1 bg-[#1A1A1A] border border-[#333] rounded-lg shadow-lg p-1.5 grid grid-cols-3 gap-1 z-50">
-              {HIGHLIGHT_COLORS.map((c) => (
-                <button
-                  key={c.label}
-                  title={c.label}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    if (c.value) {
-                      editor.chain().focus().setHighlight({ color: c.value }).run();
-                    } else {
-                      editor.chain().focus().unsetHighlight().run();
-                    }
-                    setHighlightMenuOpen(false);
-                  }}
-                  className="h-5 w-5 rounded border border-[#444] hover:ring-2 hover:ring-primary"
-                  style={{ backgroundColor: c.value ?? "transparent" }}
-                />
-              ))}
+            <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1.5 z-50">
+              {HIGHLIGHT_COLORS.map((c) => {
+                const isActive = c.value ? editor.isActive("highlight", { color: c.value }) : false;
+                return (
+                  <button
+                    key={c.label}
+                    title={c.label}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      if (c.value) {
+                        editor.chain().focus().setHighlight({ color: c.value }).run();
+                      } else {
+                        editor.chain().focus().unsetHighlight().run();
+                      }
+                      setHighlightMenuOpen(false);
+                    }}
+                    className={cn(
+                      "h-7 w-7 rounded-md border border-border transition-transform hover:scale-110",
+                      isActive && "ring-2 ring-white",
+                      !c.value && "flex items-center justify-center text-xs font-bold text-popover-foreground"
+                    )}
+                    style={{ backgroundColor: c.value ?? undefined }}
+                  >
+                    {!c.value && "✕"}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
