@@ -1,23 +1,27 @@
 
 
-# Fix: Visão 2027 minimizável no Mapa Estratégico
+# Co-responsáveis no balão "Responsável"
 
-## Problema
-O componente `VisionHeader.tsx` tem a lógica de colapso, mas **não é usado** no mapa. O `MindMapLayout.tsx` renderiza o card da Visão diretamente (linhas 529-549) sem nenhum botão de minimizar.
+## Abordagem
+Usar o campo `responsible` existente (texto) para armazenar múltiplos nomes separados por vírgula. Sem alteração no banco de dados.
 
-## Solução
-Adicionar a funcionalidade de colapso diretamente no card da Visão dentro de `MindMapLayout.tsx`:
+## Mudanças
 
-### Arquivo: `src/components/mapa/MindMapLayout.tsx`
+### Arquivo: `src/components/mapa/ActionBubbleChain.tsx`
 
-1. Importar `ChevronUp`, `ChevronDown` do lucide-react
-2. Adicionar estado `visionCollapsed` com `useState`, inicializado pelo `localStorage` (chave `pe-love-vision-collapsed`)
-3. Adicionar função `toggleVision` que alterna o estado e salva no localStorage
-4. No card da Visão (linhas 530-549):
-   - Tornar o Badge clicável (envolver em botão com `onClick={toggleVision}`)
-   - Adicionar ícone ChevronDown/ChevronUp ao lado do Badge
-   - Envolver o `RichInlineText` em div com `transition-all duration-300 ease-in-out overflow-hidden` e classes condicionais `max-h-0 opacity-0` / `max-h-[500px] opacity-100`
-   - Quando colapsado, o card fica compacto (~48px, só o badge visível)
+1. Criar componente `ResponsibleBubbleContent` dentro do arquivo:
+   - Parsear `action.responsible` por vírgula em array de nomes
+   - Renderizar cada nome como um chip/tag pequeno (text-[10px], bg-muted, rounded-full, px-2 py-0.5)
+   - Cada chip tem um botão "✕" para remover aquele co-responsável
+   - Botão "+" pequeno (h-5 w-5, rounded-full, border-dashed) no final da lista
+   - Ao clicar "+", abrir um input inline (ou pequeno popover) para digitar o nome e confirmar com Enter
+   - Ao confirmar, adicionar ao array, juntar com vírgula, e chamar `onUpdate(id, "responsible", joined)`
+   - Se ficar só 1 nome, salva como texto simples sem vírgula
 
-Nenhuma outra alteração necessária.
+2. Substituir o `InlineText` atual do bubble "Responsável" pelo novo `ResponsibleBubbleContent`
+
+3. Manter a largura do bubble `w-[160px]` mas permitir scroll vertical interno se muitos nomes (max-h com overflow-y-auto)
+
+### Nenhuma alteração de banco de dados necessária
+O campo `responsible` já é `text` e comporta valores separados por vírgula.
 
