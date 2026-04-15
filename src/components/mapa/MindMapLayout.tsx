@@ -564,6 +564,14 @@ export function MindMapLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-8 pt-4 pb-2 shrink-0">
+          {vision && visionCollapsed && (
+            <button onClick={toggleVision} className="flex items-center gap-1 cursor-pointer mr-2">
+              <Badge className="bg-primary text-primary-foreground pointer-events-none">
+                Visão {vision.reference_year}
+              </Badge>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
           <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleExpandAll}>
             <ChevronsUpDown className="h-3.5 w-3.5" /> Expandir todos
           </Button>
