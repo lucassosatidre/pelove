@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type ActionStatus = "agendado" | "nao_iniciado" | "em_andamento" | "concluido";
+export type ActionStatus = string;
 
 export interface Action {
   id: string;

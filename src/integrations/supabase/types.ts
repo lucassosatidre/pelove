@@ -88,6 +88,36 @@ export type Database = {
           },
         ]
       }
+      custom_statuses: {
+        Row: {
+          color: string
+          created_at: string | null
+          display_order: number
+          id: string
+          is_default: boolean
+          label: string
+          value: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_default?: boolean
+          label: string
+          value: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_default?: boolean
+          label?: string
+          value?: string
+        }
+        Relationships: []
+      }
       obstacles: {
         Row: {
           bg_color: string | null
