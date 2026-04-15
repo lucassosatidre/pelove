@@ -233,29 +233,27 @@ function SortablePillarCard({ pillar, onUpdate, onUpdateColor, isExpanded, onTog
 }
 
 // ─── Sortable Obstacle Card ───
-function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
+function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle, pillarColor }: {
   obstacle: Obstacle; onUpdate: (id: string, field: string, value: string) => Promise<void>;
-  isExpanded: boolean; onToggle: () => void;
+  isExpanded: boolean; onToggle: () => void; pillarColor?: string | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: obstacle.id,
     data: { type: "obstacle", pillarId: obstacle.pillar_id },
   });
-  const baseStyle = { transform: CSS.Transform.toString(transform), transition };
-  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
-
-  const customStyle: React.CSSProperties = {
-    ...baseStyle,
-    ...(obstacle.bg_color ? { backgroundColor: resolveColor(obstacle.bg_color, "bg")! } : {}),
-    ...(obstacle.text_color ? { color: resolveColor(obstacle.text_color, "text")! } : {}),
+  const baseStyle: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform), transition,
+    ...(pillarColor ? { borderLeftColor: pillarColor } : {}),
   };
+  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
   return (
     <div
       ref={setNodeRef}
-      style={customStyle}
+      style={baseStyle}
       className={cn(
         "bg-card rounded-lg border border-border p-2.5 min-w-[180px] max-w-[220px]",
+        pillarColor && "border-l-4",
         isDragging && "opacity-50 shadow-lg z-20"
       )}
       data-node="obstacle"
