@@ -9,13 +9,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { InlineText } from "./InlineText";
 import { RichInlineText } from "./RichInlineText";
 import { ActionBubbleChain } from "./ActionBubbleChain";
+import { PillarColorPicker } from "./PillarColorPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMapContextMenu } from "./MapContextMenu";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
-import { resolveColor } from "@/lib/darkModeColors";
 
 // ─── Connector SVG ───
 function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
