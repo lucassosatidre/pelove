@@ -11,7 +11,7 @@ import { RichInlineText } from "./RichInlineText";
 import { ActionBubbleChain } from "./ActionBubbleChain";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMapContextMenu } from "./MapContextMenu";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
@@ -301,6 +301,14 @@ export function MindMapLayout() {
   const { isPillarExpanded, isObstacleExpanded, togglePillar, toggleObstacle, expandAll, collapseAll } = useCollapseState();
   const [isDragging, setIsDragging] = useState(false);
   const [overDropId, setOverDropId] = useState<string | null>(null);
+  const [visionCollapsed, setVisionCollapsed] = useState(() => {
+    try { return localStorage.getItem("pe-love-vision-collapsed") === "true"; } catch { return false; }
+  });
+  const toggleVision = () => setVisionCollapsed(prev => {
+    const next = !prev;
+    try { localStorage.setItem("pe-love-vision-collapsed", String(next)); } catch {}
+    return next;
+  });
 
   useEdgeScroll(scrollRef);
 
@@ -529,22 +537,27 @@ export function MindMapLayout() {
       {vision && (
         <div className="w-[280px] min-w-[280px] border-r border-border p-4 overflow-y-auto shrink-0">
           <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
-            <Badge className="bg-primary text-primary-foreground mb-2">
-              Visão{" "}
-              <InlineText
-                value={String(vision.reference_year)}
-                onSave={updateVisionYear}
-                className="text-primary-foreground font-bold"
-                inputClassName="w-16 text-foreground"
+            <button onClick={toggleVision} className="flex items-center gap-1 cursor-pointer w-full">
+              <Badge className="bg-primary text-primary-foreground pointer-events-none">
+                Visão{" "}
+                <InlineText
+                  value={String(vision.reference_year)}
+                  onSave={updateVisionYear}
+                  className="text-primary-foreground font-bold"
+                  inputClassName="w-16 text-foreground"
+                />
+              </Badge>
+              {visionCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+            </button>
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${visionCollapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"}`}>
+              <RichInlineText
+                value={vision.text}
+                onSave={updateVisionText}
+                multiline
+                className="text-xs leading-relaxed text-foreground block mt-1"
+                inputClassName="text-xs"
               />
-            </Badge>
-            <RichInlineText
-              value={vision.text}
-              onSave={updateVisionText}
-              multiline
-              className="text-xs leading-relaxed text-foreground block mt-1"
-              inputClassName="text-xs"
-            />
+            </div>
           </div>
         </div>
       )}
