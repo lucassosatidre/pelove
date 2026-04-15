@@ -11,7 +11,7 @@ import { RichInlineText } from "./RichInlineText";
 import { ActionBubbleChain } from "./ActionBubbleChain";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMapContextMenu } from "./MapContextMenu";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
