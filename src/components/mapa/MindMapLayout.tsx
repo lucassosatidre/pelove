@@ -595,8 +595,9 @@ export function MindMapLayout() {
               {/* ─── Rows: each pillar + its obstacles + actions ─── */}
               <div className="flex flex-col gap-3 z-10 relative">
                 <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                  {visibleData.map((pillar, idx) => {
+                  {visibleData.map((pillar) => {
                     const expanded = isPillarExpanded(pillar.id);
+                    const pColor = pillar.bg_color || null;
                     return (
                       <div key={pillar.id} className="flex items-start gap-10">
                         {/* Pillar card */}
@@ -604,8 +605,8 @@ export function MindMapLayout() {
                           <DroppableZone id={pillar.id} type="pillar" isOver={overDropId === `drop-pillar-${pillar.id}`}>
                             <SortablePillarCard
                               pillar={pillar}
-                              idx={idx}
                               onUpdate={updatePillar}
+                              onUpdateColor={async (c) => { await supabase.from("pillars").update({ bg_color: c }).eq("id", pillar.id); invalidate(); }}
                               isExpanded={expanded}
                               onToggle={() => togglePillar(pillar.id)}
                               obstacleCount={pillar.visibleObstacles.length}
@@ -630,6 +631,7 @@ export function MindMapLayout() {
                                           onUpdate={updateObstacle}
                                           isExpanded={obsExpanded}
                                           onToggle={() => toggleObstacle(obs.id)}
+                                          pillarColor={pColor}
                                         />
                                       </DroppableZone>
                                     </div>
@@ -639,7 +641,7 @@ export function MindMapLayout() {
                                       <div className="flex flex-col gap-2 shrink-0">
                                         <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
                                           {obs.actions.map((action) => (
-                                            <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+                                            <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} pillarColor={pColor} />
                                           ))}
                                         </SortableContext>
                                         {newActions[obs.id] ? (
