@@ -7,6 +7,63 @@ import { RichInlineText } from "./RichInlineText";
 import { StatusSelect } from "./StatusSelect";
 import { getComputedStatus, type Action } from "@/hooks/useStrategicData";
 
+function ResponsibleBubbleContent({ value, onSave }: { value: string | null; onSave: (v: string | null) => Promise<void> }) {
+  const names = (value ?? "").split(",").map(n => n.trim()).filter(Boolean);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding && inputRef.current) inputRef.current.focus();
+  }, [adding]);
+
+  const remove = async (idx: number) => {
+    const updated = names.filter((_, i) => i !== idx);
+    await onSave(updated.length ? updated.join(", ") : null);
+  };
+
+  const add = async () => {
+    const trimmed = newName.trim();
+    if (!trimmed) { setAdding(false); return; }
+    const updated = [...names, trimmed];
+    await onSave(updated.join(", "));
+    setNewName("");
+    setAdding(false);
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1 max-h-[80px] overflow-y-auto">
+      {names.map((name, i) => (
+        <span key={i} className="inline-flex items-center gap-0.5 bg-muted text-foreground rounded-full px-2 py-0.5 text-[10px]">
+          {name}
+          <button onClick={() => remove(i)} className="hover:text-destructive ml-0.5">
+            <X className="h-2.5 w-2.5" />
+          </button>
+        </span>
+      ))}
+      {adding ? (
+        <input
+          ref={inputRef}
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") add(); if (e.key === "Escape") { setAdding(false); setNewName(""); } }}
+          onBlur={add}
+          className="bg-transparent border border-primary/30 rounded px-1 py-0.5 text-[10px] w-[80px] focus:outline-none focus:ring-1 focus:ring-primary"
+          placeholder="Nome..."
+        />
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="h-5 w-5 rounded-full border border-dashed border-muted-foreground flex items-center justify-center hover:bg-accent transition-colors"
+          title="Adicionar responsável"
+        >
+          <Plus className="h-3 w-3 text-muted-foreground" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 const BUBBLE_WIDTHS: Record<string, string> = {
   action: "w-[200px]",
   expected: "w-[200px]",
@@ -125,12 +182,7 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate, pillarColor }:
       <BubbleConnector color={bc} />
 
       <Bubble label="Responsável" width={BUBBLE_WIDTHS.responsible} borderColor={bc}>
-        <InlineText
-          value={action.responsible ?? ""}
-          onSave={(v) => onUpdate(action.id, "responsible", v || null)}
-          placeholder="—"
-          className="text-xs"
-        />
+        <ResponsibleBubbleContent value={action.responsible} onSave={(v) => onUpdate(action.id, "responsible", v)} />
       </Bubble>
 
       <BubbleConnector color={bc} />
