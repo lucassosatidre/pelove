@@ -1,17 +1,23 @@
 
 
-## Reset password for adm@pelove.com
+# Fix: Visão 2027 minimizável no Mapa Estratégico
 
-The password for **adm@pelove.com** will be reset to **562301Abc.** using a database admin API call.
+## Problema
+O componente `VisionHeader.tsx` tem a lógica de colapso, mas **não é usado** no mapa. O `MindMapLayout.tsx` renderiza o card da Visão diretamente (linhas 529-549) sem nenhum botão de minimizar.
 
-### Implementation
+## Solução
+Adicionar a funcionalidade de colapso diretamente no card da Visão dentro de `MindMapLayout.tsx`:
 
-1. Create a one-time edge function (or use the Supabase Admin API via an existing edge function) to call `supabase.auth.admin.updateUserById()` with the new password.
-2. Alternatively, use a simpler approach: create a short migration-style script that invokes the admin password update.
+### Arquivo: `src/components/mapa/MindMapLayout.tsx`
 
-### Technical detail
+1. Importar `ChevronUp`, `ChevronDown` do lucide-react
+2. Adicionar estado `visionCollapsed` com `useState`, inicializado pelo `localStorage` (chave `pe-love-vision-collapsed`)
+3. Adicionar função `toggleVision` que alterna o estado e salva no localStorage
+4. No card da Visão (linhas 530-549):
+   - Tornar o Badge clicável (envolver em botão com `onClick={toggleVision}`)
+   - Adicionar ícone ChevronDown/ChevronUp ao lado do Badge
+   - Envolver o `RichInlineText` em div com `transition-all duration-300 ease-in-out overflow-hidden` e classes condicionais `max-h-0 opacity-0` / `max-h-[500px] opacity-100`
+   - Quando colapsado, o card fica compacto (~48px, só o badge visível)
 
-- Call `supabase.auth.admin.updateUserById(userId, { password: '562301Abc.' })` using the service role key
-- The user ID for adm@pelove.com will be fetched from `auth.users`
-- This is a one-time operation; no permanent code changes needed
+Nenhuma outra alteração necessária.
 
