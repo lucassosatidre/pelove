@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Calendar } from "lucide-react";
+import { GripVertical, Calendar, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { InlineText } from "./InlineText";
 import { RichInlineText } from "./RichInlineText";
 import { StatusSelect } from "./StatusSelect";
 import { getComputedStatus, type Action } from "@/hooks/useStrategicData";
