@@ -9,13 +9,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { InlineText } from "./InlineText";
 import { RichInlineText } from "./RichInlineText";
 import { ActionBubbleChain } from "./ActionBubbleChain";
+import { PillarColorPicker } from "./PillarColorPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, GripVertical, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMapContextMenu } from "./MapContextMenu";
 import type { Pillar, Obstacle } from "@/hooks/useStrategicData";
-import { resolveColor } from "@/lib/darkModeColors";
 
 // ─── Connector SVG ───
 function Connectors({ refs }: { refs: React.RefObject<HTMLDivElement> }) {
@@ -189,30 +189,27 @@ function DroppableZone({ id, type, children, isOver }: { id: string; type: strin
 }
 
 // ─── Sortable Pillar Card ───
-function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obstacleCount, actionCount }: {
-  pillar: Pillar; idx: number; onUpdate: (id: string, name: string) => Promise<void>;
+function SortablePillarCard({ pillar, onUpdate, onUpdateColor, isExpanded, onToggle, obstacleCount, actionCount }: {
+  pillar: Pillar; onUpdate: (id: string, name: string) => Promise<void>;
+  onUpdateColor: (color: string | null) => Promise<void>;
   isExpanded: boolean; onToggle: () => void; obstacleCount: number; actionCount: number;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: pillar.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
-  const customStyle: React.CSSProperties = {
-    ...style,
-    ...(pillar.bg_color ? { backgroundColor: resolveColor(pillar.bg_color, "bg")! } : {}),
-    ...(pillar.text_color ? { color: resolveColor(pillar.text_color, "text")! } : {}),
-  };
-
   return (
     <div
       ref={setNodeRef}
-      style={customStyle}
+      style={style}
       className={cn(
         "bg-card rounded-xl shadow-sm border border-border p-3 min-w-[160px] max-w-[200px]",
+        pillar.bg_color && "border-l-4",
         isDragging && "opacity-50 shadow-lg z-20"
       )}
       data-node="pillar"
       data-id={pillar.id}
+      {...(pillar.bg_color ? { style: { ...style, borderLeftColor: pillar.bg_color } } : {})}
     >
       <div className="flex items-start gap-1">
         <button {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none shrink-0 mt-0.5">
@@ -226,6 +223,7 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
             </span>
           )}
         </div>
+        <PillarColorPicker currentColor={pillar.bg_color} onSelect={onUpdateColor} />
         <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
           <ChevronIcon className="h-3.5 w-3.5" />
         </button>
@@ -235,29 +233,27 @@ function SortablePillarCard({ pillar, idx, onUpdate, isExpanded, onToggle, obsta
 }
 
 // ─── Sortable Obstacle Card ───
-function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle }: {
+function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle, pillarColor }: {
   obstacle: Obstacle; onUpdate: (id: string, field: string, value: string) => Promise<void>;
-  isExpanded: boolean; onToggle: () => void;
+  isExpanded: boolean; onToggle: () => void; pillarColor?: string | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: obstacle.id,
     data: { type: "obstacle", pillarId: obstacle.pillar_id },
   });
-  const baseStyle = { transform: CSS.Transform.toString(transform), transition };
-  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
-
-  const customStyle: React.CSSProperties = {
-    ...baseStyle,
-    ...(obstacle.bg_color ? { backgroundColor: resolveColor(obstacle.bg_color, "bg")! } : {}),
-    ...(obstacle.text_color ? { color: resolveColor(obstacle.text_color, "text")! } : {}),
+  const baseStyle: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform), transition,
+    ...(pillarColor ? { borderLeftColor: pillarColor } : {}),
   };
+  const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
 
   return (
     <div
       ref={setNodeRef}
-      style={customStyle}
+      style={baseStyle}
       className={cn(
         "bg-card rounded-lg border border-border p-2.5 min-w-[180px] max-w-[220px]",
+        pillarColor && "border-l-4",
         isDragging && "opacity-50 shadow-lg z-20"
       )}
       data-node="obstacle"
@@ -599,8 +595,9 @@ export function MindMapLayout() {
               {/* ─── Rows: each pillar + its obstacles + actions ─── */}
               <div className="flex flex-col gap-3 z-10 relative">
                 <SortableContext items={visibleData.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                  {visibleData.map((pillar, idx) => {
+                  {visibleData.map((pillar) => {
                     const expanded = isPillarExpanded(pillar.id);
+                    const pColor = pillar.bg_color || null;
                     return (
                       <div key={pillar.id} className="flex items-start gap-10">
                         {/* Pillar card */}
@@ -608,8 +605,8 @@ export function MindMapLayout() {
                           <DroppableZone id={pillar.id} type="pillar" isOver={overDropId === `drop-pillar-${pillar.id}`}>
                             <SortablePillarCard
                               pillar={pillar}
-                              idx={idx}
                               onUpdate={updatePillar}
+                              onUpdateColor={async (c) => { await supabase.from("pillars").update({ bg_color: c }).eq("id", pillar.id); invalidate(); }}
                               isExpanded={expanded}
                               onToggle={() => togglePillar(pillar.id)}
                               obstacleCount={pillar.visibleObstacles.length}
@@ -634,6 +631,7 @@ export function MindMapLayout() {
                                           onUpdate={updateObstacle}
                                           isExpanded={obsExpanded}
                                           onToggle={() => toggleObstacle(obs.id)}
+                                          pillarColor={pColor}
                                         />
                                       </DroppableZone>
                                     </div>
@@ -643,7 +641,7 @@ export function MindMapLayout() {
                                       <div className="flex flex-col gap-2 shrink-0">
                                         <SortableContext items={obs.actions.map(a => a.id)} strategy={verticalListSortingStrategy}>
                                           {obs.actions.map((action) => (
-                                            <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} />
+                                            <ActionBubbleChain key={action.id} action={action} obstacleId={obs.id} onUpdate={updateAction} pillarColor={pColor} />
                                           ))}
                                         </SortableContext>
                                         {newActions[obs.id] ? (
