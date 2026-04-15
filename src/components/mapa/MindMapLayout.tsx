@@ -534,8 +534,8 @@ export function MindMapLayout() {
   return (
     <div className="flex-1 flex overflow-hidden" style={{ height: "calc(100vh - 48px)" }}>
       {/* ─── Left: Vision (fixed, non-scrolling) ─── */}
-      {vision && (
-        <div className="w-[280px] min-w-[280px] border-r border-border p-4 overflow-y-auto shrink-0">
+      {vision && !visionCollapsed && (
+        <div className="w-[280px] min-w-[280px] border-r border-border p-4 overflow-y-auto shrink-0 transition-all duration-300">
           <div className="bg-card rounded-xl shadow-md border border-primary/20 p-4 w-full" data-node="vision">
             <button onClick={toggleVision} className="flex items-center gap-1 cursor-pointer w-full">
               <Badge className="bg-primary text-primary-foreground pointer-events-none">
@@ -547,17 +547,15 @@ export function MindMapLayout() {
                   inputClassName="w-16 text-foreground"
                 />
               </Badge>
-              {visionCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
             </button>
-            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${visionCollapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"}`}>
-              <RichInlineText
-                value={vision.text}
-                onSave={updateVisionText}
-                multiline
-                className="text-xs leading-relaxed text-foreground block mt-1"
-                inputClassName="text-xs"
-              />
-            </div>
+            <RichInlineText
+              value={vision.text}
+              onSave={updateVisionText}
+              multiline
+              className="text-xs leading-relaxed text-foreground block mt-1"
+              inputClassName="text-xs"
+            />
           </div>
         </div>
       )}
@@ -566,6 +564,14 @@ export function MindMapLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-8 pt-4 pb-2 shrink-0">
+          {vision && visionCollapsed && (
+            <button onClick={toggleVision} className="flex items-center gap-1 cursor-pointer mr-2">
+              <Badge className="bg-primary text-primary-foreground pointer-events-none">
+                Visão {vision.reference_year}
+              </Badge>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
           <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={handleExpandAll}>
             <ChevronsUpDown className="h-3.5 w-3.5" /> Expandir todos
           </Button>
