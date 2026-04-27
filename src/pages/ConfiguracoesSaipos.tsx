@@ -51,6 +51,15 @@ interface BackfillStats {
   errors: number;
 }
 
+interface BackfillError {
+  id: number;
+  endpoint: string;
+  window_start: string;
+  window_end: string;
+  error_message: string | null;
+  attempted_at: string | null;
+}
+
 interface CronJob {
   jobname: string;
   schedule: string;
@@ -73,6 +82,7 @@ export default function ConfiguracoesSaipos() {
   const [saving, setSaving] = useState(false);
 
   const [backfillStats, setBackfillStats] = useState<BackfillStats | null>(null);
+  const [backfillErrors, setBackfillErrors] = useState<BackfillError[]>([]);
   const [backfillRunning, setBackfillRunning] = useState(false);
 
   const [crons, setCrons] = useState<CronJob[]>([]);
@@ -99,13 +109,34 @@ export default function ConfiguracoesSaipos() {
     const { data } = await (supabase as any)
       .from("saipos_backfill_progress")
       .select("status");
-    if (!data) { setBackfillStats(null); return; }
+    if (!data) { setBackfillStats(null); setBackfillErrors([]); return; }
     const total = data.length;
     const success = data.filter((r: any) => r.status === "success").length;
     const pending = data.filter((r: any) => r.status === "pending" || r.status === "running").length;
     const errors = data.filter((r: any) => r.status === "error").length;
     setBackfillStats({ total, success, pending, errors });
+
+    if (errors > 0) {
+      const { data: errs } = await (supabase as any)
+        .from("saipos_backfill_progress")
+        .select("id, endpoint, window_start, window_end, error_message, attempted_at")
+        .eq("status", "error")
+        .order("attempted_at", { ascending: false })
+        .limit(20);
+      setBackfillErrors(errs ?? []);
+    } else {
+      setBackfillErrors([]);
+    }
   }, []);
+
+  const retryFailedBackfill = async () => {
+    await (supabase as any)
+      .from("saipos_backfill_progress")
+      .update({ status: "pending", error_message: null })
+      .eq("status", "error");
+    toast({ title: "Janelas com erro voltaram para pendente" });
+    await loadBackfillStats();
+  };
 
   const loadCrons = useCallback(async () => {
     const { data } = await (supabase as any).rpc("list_saipos_crons");
@@ -357,14 +388,57 @@ export default function ConfiguracoesSaipos() {
                   </div>
                 </>
               )}
-              <Button onClick={runBackfillBatch} disabled={backfillRunning}>
-                {backfillRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
-                {backfillStats && backfillStats.total > 0 ? "Continuar backfill" : "Iniciar backfill"}
-              </Button>
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={runBackfillBatch} disabled={backfillRunning}>
+                  {backfillRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                  {backfillStats && backfillStats.total > 0 ? "Continuar backfill" : "Iniciar backfill"}
+                </Button>
+                {backfillStats && backfillStats.errors > 0 && (
+                  <Button variant="outline" onClick={retryFailedBackfill} disabled={backfillRunning}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Tentar erros novamente ({backfillStats.errors})
+                  </Button>
+                )}
+              </div>
             </>
           )}
         </CardContent>
       </Card>
+
+      {/* Errors section — only renders when there are backfill errors */}
+      {backfillErrors.length > 0 && (
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+              <XCircle className="w-5 h-5" /> Erros do backfill ({backfillErrors.length})
+            </CardTitle>
+            <CardDescription>
+              Mensagens de erro retornadas pela API ou pelo Postgres. Mostra as últimas 20.
+              Após corrigir a causa, clique em "Tentar erros novamente" no card acima.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {backfillErrors.map((e) => (
+              <div key={e.id} className="border border-destructive/30 rounded-lg p-3 bg-destructive/5 space-y-1">
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge variant="outline">{e.endpoint}</Badge>
+                  <span className="text-muted-foreground">
+                    {e.window_start} → {e.window_end}
+                  </span>
+                  {e.attempted_at && (
+                    <span className="text-muted-foreground ml-auto">
+                      {new Date(e.attempted_at).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                </div>
+                <pre className="text-xs whitespace-pre-wrap break-all bg-background/50 p-2 rounded text-destructive">
+                  {e.error_message ?? "(sem mensagem)"}
+                </pre>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Card 3: Sincronização automática (cron) */}
       <Card>
