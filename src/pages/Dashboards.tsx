@@ -23,6 +23,7 @@ import { StatusAvgTimes, SlowestOrders, CancellationsBreakdown } from "@/compone
 import {
   WaiterRanking, TableMetricsCards, ServiceChargeCard, DeliveryTimeCard, TopCustomers,
 } from "@/components/dashboards/PeopleViews";
+import { InsightsCards } from "@/components/dashboards/InsightsCards";
 
 export default function Dashboards() {
   const initial = presetToRange("last_7d");
@@ -62,6 +63,8 @@ export default function Dashboards() {
           </CardContent>
         </Card>
       )}
+
+      {!noData && <InsightsCards />}
 
       {/* Filtros globais */}
       <Card>
