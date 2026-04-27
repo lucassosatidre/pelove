@@ -19,6 +19,7 @@ import { HourHeatmap } from "@/components/dashboards/HourHeatmap";
 import { ProductRanking } from "@/components/dashboards/ProductRanking";
 import { ProductsByHour, ProductsByDow } from "@/components/dashboards/ProductsByTime";
 import { AddonsMix } from "@/components/dashboards/AddonsMix";
+import { StatusAvgTimes, SlowestOrders, CancellationsBreakdown } from "@/components/dashboards/OperationsViews";
 
 export default function Dashboards() {
   const initial = presetToRange("last_7d");
@@ -75,7 +76,7 @@ export default function Dashboards() {
         <TabsList>
           <TabsTrigger value="vendas" className="gap-2"><BarChart3 className="w-4 h-4" /> Vendas</TabsTrigger>
           <TabsTrigger value="produtos" className="gap-2"><Pizza className="w-4 h-4" /> Produtos</TabsTrigger>
-          <TabsTrigger value="operacao" className="gap-2" disabled><Activity className="w-4 h-4" /> Operação</TabsTrigger>
+          <TabsTrigger value="operacao" className="gap-2"><Activity className="w-4 h-4" /> Operação</TabsTrigger>
           <TabsTrigger value="pessoas" className="gap-2" disabled><Users className="w-4 h-4" /> Pessoas</TabsTrigger>
         </TabsList>
 
@@ -113,11 +114,10 @@ export default function Dashboards() {
           <AddonsMix start={period.start} end={period.end} saleTypes={saleTypes} />
         </TabsContent>
 
-        <TabsContent value="operacao">
-          <Card><CardContent className="p-12 text-center text-muted-foreground">
-            <Activity className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Em breve: tempo médio em cada status, gargalos, cancelamentos.</p>
-          </CardContent></Card>
+        <TabsContent value="operacao" className="space-y-4 mt-0">
+          <StatusAvgTimes start={period.start} end={period.end} saleTypes={saleTypes} />
+          <CancellationsBreakdown start={period.start} end={period.end} saleTypes={saleTypes} />
+          <SlowestOrders start={period.start} end={period.end} saleTypes={saleTypes} />
         </TabsContent>
 
         <TabsContent value="pessoas">

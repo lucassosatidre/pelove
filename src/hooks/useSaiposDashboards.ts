@@ -380,6 +380,111 @@ export function useTopAddons(start: Date, end: Date, saleTypes?: SaleType[], lim
   });
 }
 
+// -----------------------------------------------------
+// Operations: average time per status
+// -----------------------------------------------------
+export interface StatusAvgTime {
+  status_label: string;
+  avg_seconds: number;
+  median_seconds: number;
+  p90_seconds: number;
+  total_events: number;
+}
+
+export function useStatusAvgTimes(start: Date, end: Date, saleTypes?: SaleType[]) {
+  return useQuery<StatusAvgTime[]>({
+    queryKey: ["saipos", "status-times", toIso(start), toIso(end), saleTypes ?? []],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_status_avg_times", rpcParams(start, end, saleTypes));
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        status_label: r.status_label,
+        avg_seconds: Number(r.avg_seconds),
+        median_seconds: Number(r.median_seconds),
+        p90_seconds: Number(r.p90_seconds),
+        total_events: Number(r.total_events),
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Slowest orders
+// -----------------------------------------------------
+export interface SlowOrder {
+  id_sale: number;
+  shift_date: string;
+  id_sale_type: number;
+  type_label: string;
+  created_at: string | null;
+  partner_desc: string | null;
+  total_amount: number | null;
+  total_seconds: number;
+  worst_status: string | null;
+  worst_status_seconds: number | null;
+}
+
+export function useSlowestOrders(start: Date, end: Date, saleTypes?: SaleType[], limit = 30) {
+  return useQuery<SlowOrder[]>({
+    queryKey: ["saipos", "slowest-orders", toIso(start), toIso(end), saleTypes ?? [], limit],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_slowest_orders", {
+        ...rpcParams(start, end, saleTypes),
+        p_limit: limit,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        id_sale: Number(r.id_sale),
+        shift_date: r.shift_date,
+        id_sale_type: Number(r.id_sale_type),
+        type_label: r.type_label,
+        created_at: r.created_at,
+        partner_desc: r.partner_desc,
+        total_amount: r.total_amount != null ? Number(r.total_amount) : null,
+        total_seconds: Number(r.total_seconds),
+        worst_status: r.worst_status,
+        worst_status_seconds: r.worst_status_seconds != null ? Number(r.worst_status_seconds) : null,
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Cancellations
+// -----------------------------------------------------
+export interface CancellationByReason { reason: string; count: number; }
+export interface CancellationByDay { date: string; count: number; value: number; }
+
+export interface CancellationsResult {
+  total_cancellations: number;
+  total_cancellation_value: number;
+  cancellation_rate_pct: number;
+  by_reason: CancellationByReason[];
+  by_day: CancellationByDay[];
+}
+
+export function useCancellations(start: Date, end: Date, saleTypes?: SaleType[]) {
+  return useQuery<CancellationsResult | null>({
+    queryKey: ["saipos", "cancellations", toIso(start), toIso(end), saleTypes ?? []],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_cancellations", rpcParams(start, end, saleTypes));
+      if (error) throw error;
+      const row = data?.[0];
+      if (!row) return null;
+      return {
+        total_cancellations: Number(row.total_cancellations ?? 0),
+        total_cancellation_value: Number(row.total_cancellation_value ?? 0),
+        cancellation_rate_pct: Number(row.cancellation_rate_pct ?? 0),
+        by_reason: (row.by_reason ?? []) as CancellationByReason[],
+        by_day: (row.by_day ?? []) as CancellationByDay[],
+      };
+    },
+    staleTime: 30_000,
+  });
+}
+
 // Comparison range = same length, immediately preceding OR same period last year
 export type ComparisonMode = "previous_period" | "previous_year";
 
