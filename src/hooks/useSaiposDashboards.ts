@@ -485,6 +485,178 @@ export function useCancellations(start: Date, end: Date, saleTypes?: SaleType[])
   });
 }
 
+// -----------------------------------------------------
+// People: waiter ranking
+// -----------------------------------------------------
+export interface WaiterRanking {
+  id_store_waiter: number;
+  total_revenue: number;
+  total_items: number;
+  total_orders: number;
+}
+
+export function useWaiterRanking(start: Date, end: Date, limit = 30) {
+  return useQuery<WaiterRanking[]>({
+    queryKey: ["saipos", "waiter-ranking", toIso(start), toIso(end), limit],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_waiter_ranking", {
+        p_start: toIso(start),
+        p_end: toIso(end),
+        p_limit: limit,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        id_store_waiter: Number(r.id_store_waiter),
+        total_revenue: Number(r.total_revenue),
+        total_items: Number(r.total_items),
+        total_orders: Number(r.total_orders),
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// People: table metrics
+// -----------------------------------------------------
+export interface TableMetrics {
+  total_table_orders: number;
+  total_customers: number;
+  avg_customers_per_table: number | null;
+  avg_table_revenue: number | null;
+  avg_minutes_open: number | null;
+  total_revenue: number;
+}
+
+export function useTableMetrics(start: Date, end: Date) {
+  return useQuery<TableMetrics | null>({
+    queryKey: ["saipos", "table-metrics", toIso(start), toIso(end)],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_table_metrics", {
+        p_start: toIso(start),
+        p_end: toIso(end),
+      });
+      if (error) throw error;
+      const r = data?.[0];
+      if (!r) return null;
+      return {
+        total_table_orders: Number(r.total_table_orders ?? 0),
+        total_customers: Number(r.total_customers ?? 0),
+        avg_customers_per_table: r.avg_customers_per_table != null ? Number(r.avg_customers_per_table) : null,
+        avg_table_revenue: r.avg_table_revenue != null ? Number(r.avg_table_revenue) : null,
+        avg_minutes_open: r.avg_minutes_open != null ? Number(r.avg_minutes_open) : null,
+        total_revenue: Number(r.total_revenue ?? 0),
+      };
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Service charge metrics
+// -----------------------------------------------------
+export interface ServiceChargeMetrics {
+  total_orders_with_charge: number;
+  total_charged: number;
+  total_paid_estimated: number;
+  total_refused_estimated: number;
+  refused_pct: number;
+}
+
+export function useServiceCharge(start: Date, end: Date) {
+  return useQuery<ServiceChargeMetrics | null>({
+    queryKey: ["saipos", "service-charge", toIso(start), toIso(end)],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_service_charge_metrics", {
+        p_start: toIso(start),
+        p_end: toIso(end),
+      });
+      if (error) throw error;
+      const r = data?.[0];
+      if (!r) return null;
+      return {
+        total_orders_with_charge: Number(r.total_orders_with_charge ?? 0),
+        total_charged: Number(r.total_charged ?? 0),
+        total_paid_estimated: Number(r.total_paid_estimated ?? 0),
+        total_refused_estimated: Number(r.total_refused_estimated ?? 0),
+        refused_pct: Number(r.refused_pct ?? 0),
+      };
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Top customers
+// -----------------------------------------------------
+export interface TopCustomer {
+  customer_id_customer: number;
+  customer_name: string | null;
+  customer_phone: string | null;
+  total_revenue: number;
+  total_orders: number;
+  avg_ticket: number;
+  last_order_date: string;
+  first_order_date: string;
+}
+
+export function useTopCustomers(start: Date, end: Date, limit = 30) {
+  return useQuery<TopCustomer[]>({
+    queryKey: ["saipos", "top-customers", toIso(start), toIso(end), limit],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_top_customers", {
+        p_start: toIso(start),
+        p_end: toIso(end),
+        p_limit: limit,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        customer_id_customer: Number(r.customer_id_customer),
+        customer_name: r.customer_name,
+        customer_phone: r.customer_phone,
+        total_revenue: Number(r.total_revenue),
+        total_orders: Number(r.total_orders),
+        avg_ticket: Number(r.avg_ticket ?? 0),
+        last_order_date: r.last_order_date,
+        first_order_date: r.first_order_date,
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Delivery time
+// -----------------------------------------------------
+export interface DeliveryTimeMetrics {
+  total_delivery_orders: number;
+  avg_minutes: number;
+  median_minutes: number;
+  p90_minutes: number;
+}
+
+export function useDeliveryTime(start: Date, end: Date) {
+  return useQuery<DeliveryTimeMetrics | null>({
+    queryKey: ["saipos", "delivery-time", toIso(start), toIso(end)],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_delivery_time_metrics", {
+        p_start: toIso(start),
+        p_end: toIso(end),
+      });
+      if (error) throw error;
+      const r = data?.[0];
+      if (!r) return null;
+      return {
+        total_delivery_orders: Number(r.total_delivery_orders ?? 0),
+        avg_minutes: Number(r.avg_minutes ?? 0),
+        median_minutes: Number(r.median_minutes ?? 0),
+        p90_minutes: Number(r.p90_minutes ?? 0),
+      };
+    },
+    staleTime: 30_000,
+  });
+}
+
 // Comparison range = same length, immediately preceding OR same period last year
 export type ComparisonMode = "previous_period" | "previous_year";
 
