@@ -99,10 +99,37 @@ export async function fetchSaiposPage(
   url.searchParams.set("p_limit", String(limit));
   url.searchParams.set("p_offset", String(offset));
 
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  const text = await res.text();
+  // Network/connect errors throw before any response is received.
+  // Convert to a non-ok FetchPageResult with status 0 so the retry loop
+  // treats them as transient and retries (vs throwing and aborting).
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      status: 0,
+      ok: false,
+      records: [],
+      rawBodyPreview: `network error: ${msg}`,
+    };
+  }
+
+  let text: string;
+  try {
+    text = await res.text();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      status: res.status,
+      ok: false,
+      records: [],
+      rawBodyPreview: `body read error: ${msg}`,
+    };
+  }
+
   let parsed: any = null;
   try { parsed = JSON.parse(text); } catch { /* not json */ }
 
@@ -121,7 +148,8 @@ export async function fetchSaiposPage(
   };
 }
 
-// Retry one page on transient errors (5xx) with exponential backoff.
+// Retry one page on transient errors with exponential backoff.
+// Transient = network error (status 0) or 5xx server error.
 // 4xx is treated as terminal — retrying won't help.
 async function fetchPageWithRetry(
   endpoint: Endpoint,
@@ -130,17 +158,20 @@ async function fetchPageWithRetry(
   end: Date,
   limit: number,
   offset: number,
-  maxAttempts = 3,
+  maxAttempts = 4,
 ): Promise<FetchPageResult> {
   let lastErr: FetchPageResult | null = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const r = await fetchSaiposPage(endpoint, dateColumn, start, end, limit, offset);
     if (r.ok) return r;
-    if (r.status >= 400 && r.status < 500) return r; // terminal
+    // 4xx is terminal — but only if it's a real HTTP 4xx, not our synthetic 0
+    if (r.status >= 400 && r.status < 500) return r;
     lastErr = r;
     if (attempt < maxAttempts) {
-      const waitMs = [2000, 5000, 12000][attempt - 1] ?? 12000;
-      console.log(`Saipos ${endpoint} returned ${r.status}, retry ${attempt}/${maxAttempts} in ${waitMs}ms`);
+      const waitMs = [2000, 5000, 12000, 25000][attempt - 1] ?? 25000;
+      console.log(
+        `Saipos ${endpoint} transient error (status=${r.status}, body=${r.rawBodyPreview.substring(0, 100)}), retry ${attempt}/${maxAttempts} in ${waitMs}ms`,
+      );
       await new Promise((res) => setTimeout(res, waitMs));
     }
   }
