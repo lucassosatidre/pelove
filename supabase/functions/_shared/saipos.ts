@@ -65,8 +65,11 @@ export function getServiceClient(): SupabaseClient {
 }
 
 export function getToken(): string {
-  const t = Deno.env.get("SAIPOS_API_TOKEN");
-  if (!t) throw new Error("SAIPOS_API_TOKEN is not set");
+  // Accept either name — Lovable sometimes provisions secrets as *_API_KEY
+  const t = Deno.env.get("SAIPOS_API_TOKEN") ?? Deno.env.get("SAIPOS_API_KEY");
+  if (!t) {
+    throw new Error("Saipos token not set: define SAIPOS_API_TOKEN or SAIPOS_API_KEY as edge function secret");
+  }
   return t.trim();
 }
 
