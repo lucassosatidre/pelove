@@ -121,6 +121,32 @@ export async function fetchSaiposPage(
   };
 }
 
+// Retry one page on transient errors (5xx) with exponential backoff.
+// 4xx is treated as terminal — retrying won't help.
+async function fetchPageWithRetry(
+  endpoint: Endpoint,
+  dateColumn: string,
+  start: Date,
+  end: Date,
+  limit: number,
+  offset: number,
+  maxAttempts = 3,
+): Promise<FetchPageResult> {
+  let lastErr: FetchPageResult | null = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const r = await fetchSaiposPage(endpoint, dateColumn, start, end, limit, offset);
+    if (r.ok) return r;
+    if (r.status >= 400 && r.status < 500) return r; // terminal
+    lastErr = r;
+    if (attempt < maxAttempts) {
+      const waitMs = [2000, 5000, 12000][attempt - 1] ?? 12000;
+      console.log(`Saipos ${endpoint} returned ${r.status}, retry ${attempt}/${maxAttempts} in ${waitMs}ms`);
+      await new Promise((res) => setTimeout(res, waitMs));
+    }
+  }
+  return lastErr!;
+}
+
 // Pagination loop. Returns all records of the window.
 // Hard cap: maxPages to avoid runaway cost in dev.
 export async function fetchAllPages(
@@ -136,7 +162,7 @@ export async function fetchAllPages(
   let pages = 0;
   let lastStatus = 200;
   while (pages < maxPages) {
-    const r = await fetchSaiposPage(endpoint, dateColumn, start, end, pageSize, offset);
+    const r = await fetchPageWithRetry(endpoint, dateColumn, start, end, pageSize, offset);
     lastStatus = r.status;
     if (!r.ok) {
       throw new Error(`Saipos API ${endpoint} returned ${r.status}: ${r.rawBodyPreview}`);
