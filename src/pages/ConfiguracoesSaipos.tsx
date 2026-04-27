@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import {
   Loader2, Play, RefreshCw, Calendar, Activity, Database, Clock,
-  CheckCircle2, XCircle, AlertTriangle, Settings, Zap,
+  CheckCircle2, XCircle, AlertTriangle, Settings, Zap, Pause, FastForward,
 } from "lucide-react";
 
 interface SaiposConfig {
@@ -84,6 +84,9 @@ export default function ConfiguracoesSaipos() {
   const [backfillStats, setBackfillStats] = useState<BackfillStats | null>(null);
   const [backfillErrors, setBackfillErrors] = useState<BackfillError[]>([]);
   const [backfillRunning, setBackfillRunning] = useState(false);
+  const [autoRunActive, setAutoRunActive] = useState(false);
+  const [autoRunInfo, setAutoRunInfo] = useState<string>("");
+  const autoRunStop = useRef(false);
 
   const [crons, setCrons] = useState<CronJob[]>([]);
   const [cronSetupRunning, setCronSetupRunning] = useState(false);
@@ -220,6 +223,65 @@ export default function ConfiguracoesSaipos() {
       toast({ title: "Erro no backfill", description: e.message, variant: "destructive" });
     }
     setBackfillRunning(false);
+  };
+
+  // Run backfill batches in a loop until done, stopped, or 3 errors in a row.
+  // Each batch processes 6 windows (the function's hard cap) with 2s pause between batches.
+  const runBackfillUntilDone = async () => {
+    setAutoRunActive(true);
+    autoRunStop.current = false;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
+
+    while (!autoRunStop.current) {
+      try {
+        setAutoRunInfo("Processando lote...");
+        const { data, error } = await supabase.functions.invoke("saipos-historical-backfill", {
+          body: { maxWindows: 6, throttleMs: 1500 },
+        });
+        if (error) throw error;
+
+        if ((data as any)?.done) {
+          toast({ title: "Backfill concluído!", description: "Toda a base histórica foi importada." });
+          await Promise.all([loadBackfillStats(), loadConfig(), loadRuns()]);
+          break;
+        }
+
+        const p = (data as any)?.progress;
+        if (p) {
+          setAutoRunInfo(`${p.success}/${p.total} janelas (${p.errors} erros, ${p.pending} pendentes)`);
+        }
+        await loadBackfillStats();
+        consecutiveErrors = 0;
+
+        // Pause between batches so the UI updates and to avoid overwhelming the API
+        if (!autoRunStop.current) {
+          await new Promise((res) => setTimeout(res, 2000));
+        }
+      } catch (e: any) {
+        consecutiveErrors++;
+        setAutoRunInfo(`Erro (tentativa ${consecutiveErrors}/${maxConsecutiveErrors}): ${e.message}`);
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          toast({
+            title: "Auto-run pausado",
+            description: `${consecutiveErrors} erros consecutivos. Verifique o card de erros e tente continuar manualmente.`,
+            variant: "destructive",
+          });
+          break;
+        }
+        // Wait longer on error before next attempt
+        await new Promise((res) => setTimeout(res, 5000));
+      }
+    }
+
+    setAutoRunActive(false);
+    setAutoRunInfo("");
+    await Promise.all([loadBackfillStats(), loadConfig(), loadRuns()]);
+  };
+
+  const stopAutoRun = () => {
+    autoRunStop.current = true;
+    setAutoRunInfo("Parando após o lote atual...");
   };
 
   // --- Cron jobs setup ---
@@ -389,17 +451,36 @@ export default function ConfiguracoesSaipos() {
                 </>
               )}
               <div className="flex gap-2 flex-wrap">
-                <Button onClick={runBackfillBatch} disabled={backfillRunning}>
-                  {backfillRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
-                  {backfillStats && backfillStats.total > 0 ? "Continuar backfill" : "Iniciar backfill"}
-                </Button>
-                {backfillStats && backfillStats.errors > 0 && (
+                {!autoRunActive ? (
+                  <>
+                    <Button onClick={runBackfillUntilDone} disabled={backfillRunning}>
+                      <FastForward className="w-4 h-4 mr-2" />
+                      Rodar até concluir
+                    </Button>
+                    <Button variant="outline" onClick={runBackfillBatch} disabled={backfillRunning}>
+                      {backfillRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                      {backfillStats && backfillStats.total > 0 ? "Continuar (1 lote)" : "Iniciar (1 lote)"}
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="destructive" onClick={stopAutoRun}>
+                    <Pause className="w-4 h-4 mr-2" />
+                    Pausar auto-run
+                  </Button>
+                )}
+                {backfillStats && backfillStats.errors > 0 && !autoRunActive && (
                   <Button variant="outline" onClick={retryFailedBackfill} disabled={backfillRunning}>
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Tentar erros novamente ({backfillStats.errors})
                   </Button>
                 )}
               </div>
+              {autoRunActive && (
+                <div className="flex items-center gap-2 p-3 bg-primary/10 text-primary rounded-lg text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{autoRunInfo || "Iniciando..."}</span>
+                </div>
+              )}
             </>
           )}
         </CardContent>
