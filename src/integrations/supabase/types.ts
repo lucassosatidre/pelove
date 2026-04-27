@@ -231,6 +231,483 @@ export type Database = {
         }
         Relationships: []
       }
+      saipos_backfill_progress: {
+        Row: {
+          attempted_at: string | null
+          completed_at: string | null
+          endpoint: string
+          error_message: string | null
+          id: number
+          records_imported: number | null
+          status: string
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          attempted_at?: string | null
+          completed_at?: string | null
+          endpoint: string
+          error_message?: string | null
+          id?: number
+          records_imported?: number | null
+          status?: string
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          attempted_at?: string | null
+          completed_at?: string | null
+          endpoint?: string
+          error_message?: string | null
+          id?: number
+          records_imported?: number | null
+          status?: string
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      saipos_config: {
+        Row: {
+          backfill_completed_at: string | null
+          backfill_start_date: string | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          last_daily_sync_at: string | null
+          last_incremental_sync_at: string | null
+          last_old_data_check_at: string | null
+          old_data_check_enabled: boolean
+          old_data_check_window_days: number
+          store_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          backfill_completed_at?: string | null
+          backfill_start_date?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_daily_sync_at?: string | null
+          last_incremental_sync_at?: string | null
+          last_old_data_check_at?: string | null
+          old_data_check_enabled?: boolean
+          old_data_check_window_days?: number
+          store_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          backfill_completed_at?: string | null
+          backfill_start_date?: string | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_daily_sync_at?: string | null
+          last_incremental_sync_at?: string | null
+          last_old_data_check_at?: string | null
+          old_data_check_enabled?: boolean
+          old_data_check_window_days?: number
+          store_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saipos_financial: {
+        Row: {
+          amount: number | null
+          conciliated: boolean | null
+          created_at: string | null
+          date: string | null
+          desc_store_bank_account: string | null
+          desc_store_category_financial: string | null
+          desc_store_fin_transaction: string | null
+          desc_store_payment_method: string | null
+          id_store: number | null
+          id_store_fin_transaction: number
+          installment: number | null
+          issuance_date: string | null
+          notes: string | null
+          paid: boolean | null
+          payment_date: string | null
+          provider_trade_name: string | null
+          raw_payload: Json
+          recurring: boolean | null
+          saipos_synced_at: string
+          total_installments: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          conciliated?: boolean | null
+          created_at?: string | null
+          date?: string | null
+          desc_store_bank_account?: string | null
+          desc_store_category_financial?: string | null
+          desc_store_fin_transaction?: string | null
+          desc_store_payment_method?: string | null
+          id_store?: number | null
+          id_store_fin_transaction: number
+          installment?: number | null
+          issuance_date?: string | null
+          notes?: string | null
+          paid?: boolean | null
+          payment_date?: string | null
+          provider_trade_name?: string | null
+          raw_payload: Json
+          recurring?: boolean | null
+          saipos_synced_at?: string
+          total_installments?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          conciliated?: boolean | null
+          created_at?: string | null
+          date?: string | null
+          desc_store_bank_account?: string | null
+          desc_store_category_financial?: string | null
+          desc_store_fin_transaction?: string | null
+          desc_store_payment_method?: string | null
+          id_store?: number | null
+          id_store_fin_transaction?: number
+          installment?: number | null
+          issuance_date?: string | null
+          notes?: string | null
+          paid?: boolean | null
+          payment_date?: string | null
+          provider_trade_name?: string | null
+          raw_payload?: Json
+          recurring?: boolean | null
+          saipos_synced_at?: string
+          total_installments?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      saipos_sales: {
+        Row: {
+          canceled: boolean | null
+          count_canceled_items: number | null
+          created_at: string | null
+          customer_document: string | null
+          customer_id_customer: number | null
+          customer_name: string | null
+          customer_phone: string | null
+          delivery_city: string | null
+          delivery_fee: number | null
+          delivery_man_name: string | null
+          delivery_neighborhood: string | null
+          desc_sale: string | null
+          id_sale: number
+          id_sale_type: number | null
+          id_store: number | null
+          nfce_data_emissao: string | null
+          nfce_numero: number | null
+          nfce_serie: string | null
+          partner_cod_sale1: string | null
+          partner_desc: string | null
+          partner_status: string | null
+          raw_payload: Json
+          saipos_synced_at: string
+          sale_number: number | null
+          schedule_datetime: string | null
+          shift_date: string | null
+          store_shift_desc: string | null
+          store_shift_starting_time: string | null
+          table_customers_count: number | null
+          table_id_table: number | null
+          table_service_charge_percent: number | null
+          table_total_service_charge: number | null
+          ticket_number: number | null
+          total_amount: number | null
+          total_amount_items: number | null
+          total_discount: number | null
+          total_increase: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          canceled?: boolean | null
+          count_canceled_items?: number | null
+          created_at?: string | null
+          customer_document?: string | null
+          customer_id_customer?: number | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_city?: string | null
+          delivery_fee?: number | null
+          delivery_man_name?: string | null
+          delivery_neighborhood?: string | null
+          desc_sale?: string | null
+          id_sale: number
+          id_sale_type?: number | null
+          id_store?: number | null
+          nfce_data_emissao?: string | null
+          nfce_numero?: number | null
+          nfce_serie?: string | null
+          partner_cod_sale1?: string | null
+          partner_desc?: string | null
+          partner_status?: string | null
+          raw_payload: Json
+          saipos_synced_at?: string
+          sale_number?: number | null
+          schedule_datetime?: string | null
+          shift_date?: string | null
+          store_shift_desc?: string | null
+          store_shift_starting_time?: string | null
+          table_customers_count?: number | null
+          table_id_table?: number | null
+          table_service_charge_percent?: number | null
+          table_total_service_charge?: number | null
+          ticket_number?: number | null
+          total_amount?: number | null
+          total_amount_items?: number | null
+          total_discount?: number | null
+          total_increase?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          canceled?: boolean | null
+          count_canceled_items?: number | null
+          created_at?: string | null
+          customer_document?: string | null
+          customer_id_customer?: number | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_city?: string | null
+          delivery_fee?: number | null
+          delivery_man_name?: string | null
+          delivery_neighborhood?: string | null
+          desc_sale?: string | null
+          id_sale?: number
+          id_sale_type?: number | null
+          id_store?: number | null
+          nfce_data_emissao?: string | null
+          nfce_numero?: number | null
+          nfce_serie?: string | null
+          partner_cod_sale1?: string | null
+          partner_desc?: string | null
+          partner_status?: string | null
+          raw_payload?: Json
+          saipos_synced_at?: string
+          sale_number?: number | null
+          schedule_datetime?: string | null
+          shift_date?: string | null
+          store_shift_desc?: string | null
+          store_shift_starting_time?: string | null
+          table_customers_count?: number | null
+          table_id_table?: number | null
+          table_service_charge_percent?: number | null
+          table_total_service_charge?: number | null
+          ticket_number?: number | null
+          total_amount?: number | null
+          total_amount_items?: number | null
+          total_discount?: number | null
+          total_increase?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      saipos_sales_items: {
+        Row: {
+          created_by: number | null
+          deleted: boolean | null
+          deleted_at: string | null
+          deleted_by: number | null
+          desc_sale_item: string | null
+          done_at: string | null
+          group_sequence: number | null
+          id_sale: number
+          id_sale_from: number | null
+          id_sale_item: number
+          id_sale_to: number | null
+          id_sale_type: number | null
+          id_store: number | null
+          id_store_cancellation_reason: number | null
+          id_store_item: number | null
+          id_store_variation: number | null
+          id_store_waiter: number | null
+          integration_code: string | null
+          item_created_at: string | null
+          item_updated_at: string | null
+          normalized_name: string | null
+          quantity: number | null
+          raw_payload: Json
+          saipos_synced_at: string
+          shift_date: string | null
+          status: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_by?: number | null
+          deleted?: boolean | null
+          deleted_at?: string | null
+          deleted_by?: number | null
+          desc_sale_item?: string | null
+          done_at?: string | null
+          group_sequence?: number | null
+          id_sale: number
+          id_sale_from?: number | null
+          id_sale_item: number
+          id_sale_to?: number | null
+          id_sale_type?: number | null
+          id_store?: number | null
+          id_store_cancellation_reason?: number | null
+          id_store_item?: number | null
+          id_store_variation?: number | null
+          id_store_waiter?: number | null
+          integration_code?: string | null
+          item_created_at?: string | null
+          item_updated_at?: string | null
+          normalized_name?: string | null
+          quantity?: number | null
+          raw_payload: Json
+          saipos_synced_at?: string
+          shift_date?: string | null
+          status?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_by?: number | null
+          deleted?: boolean | null
+          deleted_at?: string | null
+          deleted_by?: number | null
+          desc_sale_item?: string | null
+          done_at?: string | null
+          group_sequence?: number | null
+          id_sale?: number
+          id_sale_from?: number | null
+          id_sale_item?: number
+          id_sale_to?: number | null
+          id_sale_type?: number | null
+          id_store?: number | null
+          id_store_cancellation_reason?: number | null
+          id_store_item?: number | null
+          id_store_variation?: number | null
+          id_store_waiter?: number | null
+          integration_code?: string | null
+          item_created_at?: string | null
+          item_updated_at?: string | null
+          normalized_name?: string | null
+          quantity?: number | null
+          raw_payload?: Json
+          saipos_synced_at?: string
+          shift_date?: string | null
+          status?: number | null
+          unit_price?: number | null
+        }
+        Relationships: []
+      }
+      saipos_status_history: {
+        Row: {
+          authorized_by_full_name: string | null
+          authorized_by_id_user: number | null
+          desc_cancellation_reason: string | null
+          desc_store_sale_status: string | null
+          display_order: number | null
+          duration_time_seconds: number | null
+          history_created_at: string | null
+          id_sale: number
+          id_sale_status_history: number
+          id_store: number | null
+          raw_payload: Json
+          saipos_synced_at: string
+          shift_date: string | null
+          user_email: string | null
+          user_full_name: string | null
+          user_id_user: number | null
+          user_type: number | null
+        }
+        Insert: {
+          authorized_by_full_name?: string | null
+          authorized_by_id_user?: number | null
+          desc_cancellation_reason?: string | null
+          desc_store_sale_status?: string | null
+          display_order?: number | null
+          duration_time_seconds?: number | null
+          history_created_at?: string | null
+          id_sale: number
+          id_sale_status_history: number
+          id_store?: number | null
+          raw_payload: Json
+          saipos_synced_at?: string
+          shift_date?: string | null
+          user_email?: string | null
+          user_full_name?: string | null
+          user_id_user?: number | null
+          user_type?: number | null
+        }
+        Update: {
+          authorized_by_full_name?: string | null
+          authorized_by_id_user?: number | null
+          desc_cancellation_reason?: string | null
+          desc_store_sale_status?: string | null
+          display_order?: number | null
+          duration_time_seconds?: number | null
+          history_created_at?: string | null
+          id_sale?: number
+          id_sale_status_history?: number
+          id_store?: number | null
+          raw_payload?: Json
+          saipos_synced_at?: string
+          shift_date?: string | null
+          user_email?: string | null
+          user_full_name?: string | null
+          user_id_user?: number | null
+          user_type?: number | null
+        }
+        Relationships: []
+      }
+      saipos_sync_runs: {
+        Row: {
+          date_column: string | null
+          duration_ms: number | null
+          endpoint: string
+          error_message: string | null
+          finished_at: string | null
+          http_status: number | null
+          id: number
+          period_end: string | null
+          period_start: string | null
+          records_received: number | null
+          records_upserted: number | null
+          run_type: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          date_column?: string | null
+          duration_ms?: number | null
+          endpoint: string
+          error_message?: string | null
+          finished_at?: string | null
+          http_status?: number | null
+          id?: number
+          period_end?: string | null
+          period_start?: string | null
+          records_received?: number | null
+          records_upserted?: number | null
+          run_type: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          date_column?: string | null
+          duration_ms?: number | null
+          endpoint?: string
+          error_message?: string | null
+          finished_at?: string | null
+          http_status?: number | null
+          id?: number
+          period_end?: string | null
+          period_start?: string | null
+          records_received?: number | null
+          records_upserted?: number | null
+          run_type?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       vision: {
         Row: {
           created_at: string | null
@@ -260,7 +737,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      list_saipos_crons: {
+        Args: never
+        Returns: {
+          active: boolean
+          jobid: number
+          jobname: string
+          schedule: string
+        }[]
+      }
+      schedule_saipos_crons: {
+        Args: { p_auth_key: string; p_functions_url: string }
+        Returns: Json
+      }
+      unschedule_saipos_crons: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
