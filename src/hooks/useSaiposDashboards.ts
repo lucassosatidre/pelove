@@ -252,6 +252,134 @@ export function presetToRange(preset: PeriodPreset): { start: Date; end: Date } 
   }
 }
 
+// -----------------------------------------------------
+// Top products with dedup across channels
+// -----------------------------------------------------
+export interface TopProduct {
+  normalized_name: string;
+  display_name: string;
+  quantity: number;
+  revenue: number;
+  orders: number;
+  channels: string[];
+}
+
+export function useTopProducts(start: Date, end: Date, saleTypes?: SaleType[], limit = 30) {
+  return useQuery<TopProduct[]>({
+    queryKey: ["saipos", "top-products", toIso(start), toIso(end), saleTypes ?? [], limit],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_top_products", {
+        ...rpcParams(start, end, saleTypes),
+        p_limit: limit,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        normalized_name: r.normalized_name,
+        display_name: r.display_name ?? r.normalized_name,
+        quantity: Number(r.quantity),
+        revenue: Number(r.revenue),
+        orders: Number(r.orders),
+        channels: r.channels ?? [],
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Products by hour (top-N products with hourly breakdown)
+// -----------------------------------------------------
+export interface ProductByHourRow {
+  normalized_name: string;
+  display_name: string;
+  hour: number;
+  quantity: number;
+  orders: number;
+}
+
+export function useProductsByHour(start: Date, end: Date, saleTypes?: SaleType[], topN = 8) {
+  return useQuery<ProductByHourRow[]>({
+    queryKey: ["saipos", "products-by-hour", toIso(start), toIso(end), saleTypes ?? [], topN],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_product_by_hour", {
+        ...rpcParams(start, end, saleTypes),
+        p_top_products: topN,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        normalized_name: r.normalized_name,
+        display_name: r.display_name ?? r.normalized_name,
+        hour: Number(r.hour),
+        quantity: Number(r.quantity),
+        orders: Number(r.orders),
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Products by day of week
+// -----------------------------------------------------
+export interface ProductByDowRow {
+  normalized_name: string;
+  display_name: string;
+  dow: number;
+  quantity: number;
+  orders: number;
+}
+
+export function useProductsByDow(start: Date, end: Date, saleTypes?: SaleType[], topN = 8) {
+  return useQuery<ProductByDowRow[]>({
+    queryKey: ["saipos", "products-by-dow", toIso(start), toIso(end), saleTypes ?? [], topN],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_product_by_dow", {
+        ...rpcParams(start, end, saleTypes),
+        p_top_products: topN,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        normalized_name: r.normalized_name,
+        display_name: r.display_name ?? r.normalized_name,
+        dow: Number(r.dow),
+        quantity: Number(r.quantity),
+        orders: Number(r.orders),
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// -----------------------------------------------------
+// Top addons / complementos
+// -----------------------------------------------------
+export interface TopAddon {
+  addon_name: string;
+  uses: number;
+  total_additional_value: number;
+  parent_products: string[];
+}
+
+export function useTopAddons(start: Date, end: Date, saleTypes?: SaleType[], limit = 30) {
+  return useQuery<TopAddon[]>({
+    queryKey: ["saipos", "top-addons", toIso(start), toIso(end), saleTypes ?? [], limit],
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_top_addons", {
+        ...rpcParams(start, end, saleTypes),
+        p_limit: limit,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        addon_name: r.addon_name,
+        uses: Number(r.uses),
+        total_additional_value: Number(r.total_additional_value),
+        parent_products: r.parent_products ?? [],
+      }));
+    },
+    staleTime: 30_000,
+  });
+}
+
 // Comparison range = same length, immediately preceding OR same period last year
 export type ComparisonMode = "previous_period" | "previous_year";
 

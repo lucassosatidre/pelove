@@ -16,6 +16,9 @@ import { KpiCards } from "@/components/dashboards/KpiCards";
 import { ComparativeChart } from "@/components/dashboards/ComparativeChart";
 import { ShiftBreakdown } from "@/components/dashboards/ShiftBreakdown";
 import { HourHeatmap } from "@/components/dashboards/HourHeatmap";
+import { ProductRanking } from "@/components/dashboards/ProductRanking";
+import { ProductsByHour, ProductsByDow } from "@/components/dashboards/ProductsByTime";
+import { AddonsMix } from "@/components/dashboards/AddonsMix";
 
 export default function Dashboards() {
   const initial = presetToRange("last_7d");
@@ -71,7 +74,7 @@ export default function Dashboards() {
       <Tabs defaultValue="vendas" className="space-y-4">
         <TabsList>
           <TabsTrigger value="vendas" className="gap-2"><BarChart3 className="w-4 h-4" /> Vendas</TabsTrigger>
-          <TabsTrigger value="produtos" className="gap-2" disabled><Pizza className="w-4 h-4" /> Produtos</TabsTrigger>
+          <TabsTrigger value="produtos" className="gap-2"><Pizza className="w-4 h-4" /> Produtos</TabsTrigger>
           <TabsTrigger value="operacao" className="gap-2" disabled><Activity className="w-4 h-4" /> Operação</TabsTrigger>
           <TabsTrigger value="pessoas" className="gap-2" disabled><Users className="w-4 h-4" /> Pessoas</TabsTrigger>
         </TabsList>
@@ -103,11 +106,11 @@ export default function Dashboards() {
           />
         </TabsContent>
 
-        <TabsContent value="produtos">
-          <Card><CardContent className="p-12 text-center text-muted-foreground">
-            <Pizza className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Em breve: ranking, dedup entre canais, mix de adicionais.</p>
-          </CardContent></Card>
+        <TabsContent value="produtos" className="space-y-4 mt-0">
+          <ProductRanking start={period.start} end={period.end} saleTypes={saleTypes} />
+          <ProductsByHour start={period.start} end={period.end} saleTypes={saleTypes} />
+          <ProductsByDow start={period.start} end={period.end} saleTypes={saleTypes} />
+          <AddonsMix start={period.start} end={period.end} saleTypes={saleTypes} />
         </TabsContent>
 
         <TabsContent value="operacao">
