@@ -88,6 +88,190 @@ export type Database = {
           },
         ]
       }
+      advisor_conversations: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          last_message_at: string
+          message_count: number
+          pinned: boolean
+          title: string | null
+          total_input_tokens: number
+          total_output_tokens: number
+          user_id: string | null
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          pinned?: boolean
+          title?: string | null
+          total_input_tokens?: number
+          total_output_tokens?: number
+          user_id?: string | null
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          pinned?: boolean
+          title?: string | null
+          total_input_tokens?: number
+          total_output_tokens?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      advisor_facts: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          fact: string
+          id: string
+          source_conversation_id: string | null
+          topic: string
+          updated_at: string
+          user_confirmed: boolean
+          user_id: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          fact: string
+          id?: string
+          source_conversation_id?: string | null
+          topic?: string
+          updated_at?: string
+          user_confirmed?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          fact?: string
+          id?: string
+          source_conversation_id?: string | null
+          topic?: string
+          updated_at?: string
+          user_confirmed?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_facts_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_insights: {
+        Row: {
+          body: string
+          created_at: string
+          dismissed: boolean
+          dismissed_at: string | null
+          domain: string
+          for_date: string
+          generated_by: string
+          generation_model: string | null
+          id: string
+          metadata: Json | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          dismissed?: boolean
+          dismissed_at?: string | null
+          domain?: string
+          for_date: string
+          generated_by?: string
+          generation_model?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          dismissed?: boolean
+          dismissed_at?: string | null
+          domain?: string
+          for_date?: string
+          generated_by?: string
+          generation_model?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      advisor_messages: {
+        Row: {
+          cache_creation_input_tokens: number | null
+          cache_read_input_tokens: number | null
+          content: Json
+          conversation_id: string
+          created_at: string
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          role: string
+          stop_reason: string | null
+          tool_calls: Json | null
+          tool_results: Json | null
+        }
+        Insert: {
+          cache_creation_input_tokens?: number | null
+          cache_read_input_tokens?: number | null
+          content: Json
+          conversation_id: string
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          role: string
+          stop_reason?: string | null
+          tool_calls?: Json | null
+          tool_results?: Json | null
+        }
+        Update: {
+          cache_creation_input_tokens?: number | null
+          cache_read_input_tokens?: number | null
+          content?: Json
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          role?: string
+          stop_reason?: string | null
+          tool_calls?: Json | null
+          tool_results?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_statuses: {
         Row: {
           color: string
@@ -737,6 +921,218 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      date_bucket: {
+        Args: { p_date: string; p_granularity: string }
+        Returns: string
+      }
+      get_cancellations: {
+        Args: { p_end: string; p_sale_types?: number[]; p_start: string }
+        Returns: {
+          by_day: Json
+          by_reason: Json
+          cancellation_rate_pct: number
+          total_cancellation_value: number
+          total_cancellations: number
+        }[]
+      }
+      get_data_coverage: {
+        Args: never
+        Returns: {
+          earliest_date: string
+          latest_date: string
+          total_sales: number
+        }[]
+      }
+      get_delivery_time_metrics: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          avg_minutes: number
+          median_minutes: number
+          p90_minutes: number
+          total_delivery_orders: number
+        }[]
+      }
+      get_product_by_dow: {
+        Args: {
+          p_end: string
+          p_sale_types?: number[]
+          p_start: string
+          p_top_products?: number
+        }
+        Returns: {
+          display_name: string
+          dow: number
+          normalized_name: string
+          orders: number
+          quantity: number
+        }[]
+      }
+      get_product_by_hour: {
+        Args: {
+          p_end: string
+          p_sale_types?: number[]
+          p_start: string
+          p_top_products?: number
+        }
+        Returns: {
+          display_name: string
+          hour: number
+          normalized_name: string
+          orders: number
+          quantity: number
+        }[]
+      }
+      get_sales_by_shift: {
+        Args: { p_end: string; p_sale_types?: number[]; p_start: string }
+        Returns: {
+          orders: number
+          revenue: number
+          shift_label: string
+          starting_time: string
+        }[]
+      }
+      get_sales_by_type: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          id_sale_type: number
+          orders: number
+          revenue: number
+          type_label: string
+        }[]
+      }
+      get_sales_heatmap: {
+        Args: { p_end: string; p_sale_types?: number[]; p_start: string }
+        Returns: {
+          dow: number
+          hour: number
+          orders: number
+          revenue: number
+        }[]
+      }
+      get_sales_series: {
+        Args: {
+          p_end: string
+          p_granularity?: string
+          p_sale_types?: number[]
+          p_start: string
+        }
+        Returns: {
+          bucket: string
+          orders: number
+          revenue: number
+        }[]
+      }
+      get_sales_totals: {
+        Args: { p_end: string; p_sale_types?: number[]; p_start: string }
+        Returns: {
+          avg_ticket: number
+          total_orders: number
+          total_revenue: number
+        }[]
+      }
+      get_service_charge_metrics: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          refused_pct: number
+          total_charged: number
+          total_orders_with_charge: number
+          total_paid_estimated: number
+          total_refused_estimated: number
+        }[]
+      }
+      get_slowest_orders: {
+        Args: {
+          p_end: string
+          p_limit?: number
+          p_sale_types?: number[]
+          p_start: string
+        }
+        Returns: {
+          created_at: string
+          id_sale: number
+          id_sale_type: number
+          partner_desc: string
+          shift_date: string
+          total_amount: number
+          total_seconds: number
+          type_label: string
+          worst_status: string
+          worst_status_seconds: number
+        }[]
+      }
+      get_status_avg_times: {
+        Args: { p_end: string; p_sale_types?: number[]; p_start: string }
+        Returns: {
+          avg_seconds: number
+          median_seconds: number
+          p90_seconds: number
+          status_label: string
+          total_events: number
+        }[]
+      }
+      get_table_metrics: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          avg_customers_per_table: number
+          avg_minutes_open: number
+          avg_table_revenue: number
+          total_customers: number
+          total_revenue: number
+          total_table_orders: number
+        }[]
+      }
+      get_top_addons: {
+        Args: {
+          p_end: string
+          p_limit?: number
+          p_sale_types?: number[]
+          p_start: string
+        }
+        Returns: {
+          addon_name: string
+          parent_products: string[]
+          total_additional_value: number
+          uses: number
+        }[]
+      }
+      get_top_customers: {
+        Args: { p_end: string; p_limit?: number; p_start: string }
+        Returns: {
+          avg_ticket: number
+          customer_id_customer: number
+          customer_name: string
+          customer_phone: string
+          first_order_date: string
+          last_order_date: string
+          total_orders: number
+          total_revenue: number
+        }[]
+      }
+      get_top_products: {
+        Args: {
+          p_end: string
+          p_limit?: number
+          p_sale_types?: number[]
+          p_start: string
+        }
+        Returns: {
+          channels: string[]
+          display_name: string
+          normalized_name: string
+          orders: number
+          quantity: number
+          revenue: number
+        }[]
+      }
+      get_waiter_ranking: {
+        Args: { p_end: string; p_limit?: number; p_start: string }
+        Returns: {
+          id_store_waiter: number
+          total_items: number
+          total_orders: number
+          total_revenue: number
+        }[]
+      }
       list_saipos_crons: {
         Args: never
         Returns: {
