@@ -1,5 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseOffline as supabase } from "@/lib/offline/supabaseOffline";
+import { db } from "@/lib/offline/db";
+import { refreshFromServer } from "@/lib/offline/sync";
+
+async function ensureLocalSeed() {
+  const counts = await Promise.all([
+    db.vision.count(),
+    db.pillars.count(),
+    db.obstacles.count(),
+    db.actions.count(),
+  ]);
+  const empty = counts.every((c) => c === 0);
+  if (empty && navigator.onLine) {
+    await refreshFromServer();
+  }
+}
 
 export type ActionStatus = string;
 
@@ -56,6 +71,7 @@ export function useVision() {
   return useQuery({
     queryKey: ["vision"],
     queryFn: async () => {
+      await ensureLocalSeed();
       const { data, error } = await supabase.from("vision").select("*").limit(1).single();
       if (error) throw error;
       return data as Vision;
@@ -67,6 +83,7 @@ export function useStrategicMap() {
   return useQuery({
     queryKey: ["strategic-map"],
     queryFn: async () => {
+      await ensureLocalSeed();
       const { data: pillars, error: pe } = await supabase
         .from("pillars")
         .select("*")

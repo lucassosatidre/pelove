@@ -9,7 +9,7 @@ import { InlineText } from "./InlineText";
 import { RichInlineText } from "./RichInlineText";
 import { SortableObstacleBlock } from "./ObstacleBlock";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseOffline as supabase } from "@/lib/offline/supabaseOffline";
 import type { Pillar } from "@/hooks/useStrategicData";
 import { PILLAR_COLORS } from "@/hooks/useStrategicData";
 

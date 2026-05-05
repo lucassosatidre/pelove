@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseOffline as supabase } from "@/lib/offline/supabaseOffline";
 import { useStrategicMap, useVision } from "@/hooks/useStrategicData";
 import { useCollapseState } from "@/hooks/useCollapseState";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, DragOverlay, type DragStartEvent, type DragOverEvent, useDroppable } from "@dnd-kit/core";

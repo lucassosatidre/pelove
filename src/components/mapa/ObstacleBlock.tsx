@@ -9,7 +9,7 @@ import { RichInlineText } from "./RichInlineText";
 import { SortableActionRow, ACTION_COLS } from "./ActionRow";
 import { Button } from "@/components/ui/button";
 import type { Obstacle } from "@/hooks/useStrategicData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseOffline as supabase } from "@/lib/offline/supabaseOffline";
 
 interface ObstacleBlockProps {
   obstacle: Obstacle;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useVision } from "@/hooks/useStrategicData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseOffline as supabase } from "@/lib/offline/supabaseOffline";
 import { useQueryClient } from "@tanstack/react-query";
 import { InlineText } from "./InlineText";
 import { RichInlineText } from "./RichInlineText";
