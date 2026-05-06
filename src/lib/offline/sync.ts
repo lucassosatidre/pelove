@@ -116,7 +116,7 @@ export async function refreshFromServer(): Promise<void> {
     if (error || !data) continue;
     const t = tableOf(tbl);
     await t.clear();
-    if (data.length > 0) await t.bulkPut(data as never);
+    if (data.length > 0) await (t as any).bulkPut(data);
   }
   await db.meta.put({ key: "last_sync", value: Date.now() });
   notifyMutation();
