@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -5,13 +6,16 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend,
 } from "recharts";
 import { DollarSign, TrendingUp, TrendingDown, Receipt, Wallet } from "lucide-react";
 import {
-  useDRESummary, useDRERevenueByChannel, useDREExpensesByCategory,
-  useDREMonthlyEvolution,
+  useDRESummary, useDRERevenueByChannel, useDREExpensesByGroup,
+  useDREMonthlyEvolution, DRE_GROUP_LABELS, type DREGroup,
 } from "@/hooks/useDRE";
 
 const fmtBRL = (n: number) =>
@@ -19,7 +23,7 @@ const fmtBRL = (n: number) =>
 const fmtBRLshort = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 const fmtInt = (n: number) => n.toLocaleString("pt-BR");
-const fmtPct = (n: number) => `${n.toFixed(1)}%`;
+const fmtPct = (n: number) => `${n.toFixed(2)}%`;
 
 interface RangeProps {
   start: Date;
@@ -27,7 +31,7 @@ interface RangeProps {
 }
 
 // =====================================================
-// 1. KPI Cards: Faturamento, Despesas, Resultado, Margem
+// 1. KPI Cards (Bruta / Líquida / Lucro Operacional / Lucro Líquido)
 // =====================================================
 export function DREKpiCards({ start, end }: RangeProps) {
   const summary = useDRESummary(start, end);
@@ -40,42 +44,39 @@ export function DREKpiCards({ start, end }: RangeProps) {
     );
   }
 
-  const s = summary.data ?? {
-    gross_revenue: 0, net_sales_revenue: 0, total_expenses: 0,
-    net_result: 0, total_orders: 0, avg_ticket: 0,
-    other_income: 0, total_discount: 0, total_increase: 0,
-    delivery_fee_passthrough: 0, service_charge_passthrough: 0,
-  };
+  const s = summary.data;
+  if (!s) return null;
 
-  const margin = s.net_sales_revenue > 0 ? (s.net_result / s.net_sales_revenue) * 100 : 0;
-  const positiveResult = s.net_result >= 0;
+  const operatingMargin = s.gross_revenue > 0 ? (s.operating_profit / s.gross_revenue) * 100 : 0;
+  const netMargin = s.gross_revenue > 0 ? (s.net_profit / s.gross_revenue) * 100 : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <KpiCard
         icon={<DollarSign className="w-5 h-5" />}
-        label="Faturamento bruto"
+        label="Receita Operacional Bruta"
         value={fmtBRL(s.gross_revenue)}
         sub={`${fmtInt(s.total_orders)} pedidos · tkt ${fmtBRL(s.avg_ticket)}`}
       />
       <KpiCard
         icon={<Receipt className="w-5 h-5" />}
-        label="Receita líquida"
-        value={fmtBRL(s.net_sales_revenue)}
-        sub={`Bruto − repasses (${fmtBRL(s.delivery_fee_passthrough + s.service_charge_passthrough)})`}
+        label="Receita Líquida"
+        value={fmtBRL(s.net_revenue)}
+        sub={`Bruta − impostos (${fmtBRL(s.total_taxes)})`}
       />
       <KpiCard
         icon={<Wallet className="w-5 h-5" />}
-        label="Despesas"
-        value={fmtBRL(s.total_expenses)}
-        sub={s.other_income > 0 ? `+ outras receitas: ${fmtBRL(s.other_income)}` : "do módulo financeiro"}
+        label="Lucro Operacional"
+        value={fmtBRL(s.operating_profit)}
+        sub={`Margem operacional ${fmtPct(operatingMargin)}`}
+        accent={s.operating_profit >= 0 ? "good" : "bad"}
       />
       <KpiCard
-        icon={positiveResult ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-        label="Resultado"
-        value={fmtBRL(s.net_result)}
-        sub={`Margem ${fmtPct(margin)}`}
-        accent={positiveResult ? "good" : "bad"}
+        icon={s.net_profit >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+        label="Lucro Líquido"
+        value={fmtBRL(s.net_profit)}
+        sub={`Margem líquida ${fmtPct(netMargin)}`}
+        accent={s.net_profit >= 0 ? "good" : "bad"}
       />
     </div>
   );
@@ -108,7 +109,7 @@ function KpiCard({ icon, label, value, sub, accent }: {
 }
 
 // =====================================================
-// 2. DRE em formato cascata (estrutura clássica)
+// 2. DRE em cascata (estrutura clássica Saipos-aligned)
 // =====================================================
 export function DRECascade({ start, end }: RangeProps) {
   const summary = useDRESummary(start, end);
@@ -117,7 +118,7 @@ export function DRECascade({ start, end }: RangeProps) {
     return (
       <Card>
         <CardHeader><CardTitle className="text-base">Demonstrativo de resultado</CardTitle></CardHeader>
-        <CardContent><Skeleton className="h-80 w-full" /></CardContent>
+        <CardContent><Skeleton className="h-96 w-full" /></CardContent>
       </Card>
     );
   }
@@ -132,57 +133,85 @@ export function DRECascade({ start, end }: RangeProps) {
     );
   }
 
-  const margin = s.net_sales_revenue > 0 ? (s.net_result / s.net_sales_revenue) * 100 : 0;
+  const pctNet = (v: number) => s.net_revenue > 0 ? (v / s.net_revenue) * 100 : 0;
+  const netMargin = s.gross_revenue > 0 ? (s.net_profit / s.gross_revenue) * 100 : 0;
 
   const rows: Array<{
     label: string;
     value: number;
-    bold?: boolean;
-    indent?: boolean;
-    sign?: "+" | "-" | "=";
-    note?: string;
+    pctOfNet?: number;
+    role?: "section" | "subtotal" | "total";
   }> = [
-    { label: "(+) Faturamento bruto (vendas)", value: s.gross_revenue, bold: true },
-    { label: "Descontos concedidos", value: -s.total_discount, indent: true, sign: "-", note: "já deduzidos do bruto" },
-    { label: "Acréscimos cobrados", value: s.total_increase, indent: true, sign: "+", note: "já incluídos no bruto" },
-    { label: "(−) Taxa de entrega (repasse entregador)", value: -s.delivery_fee_passthrough, sign: "-" },
-    { label: "(−) Taxa de serviço (repasse garçom)", value: -s.service_charge_passthrough, sign: "-" },
-    { label: "(=) Receita líquida operacional", value: s.net_sales_revenue, bold: true, sign: "=" },
-    { label: "(+) Outras receitas (mov. financeiras)", value: s.other_income, sign: "+" },
-    { label: "(−) Despesas operacionais", value: -s.total_expenses, sign: "-" },
-    { label: "(=) Resultado do período", value: s.net_result, bold: true, sign: "=" },
-  ];
+    { label: "(+) Receita Operacional Bruta", value: s.gross_revenue, role: "section" },
+    { label: "(−) Impostos", value: -s.total_taxes },
+    { label: "(=) Receita Líquida", value: s.net_revenue, role: "subtotal" },
+    { label: "(−) Custo das Mercadorias Vendidas (CMV)", value: -s.total_cogs },
+    { label: "(−) Custo com Vendas", value: -s.total_sales_cost },
+    { label: "(=) Lucro Operacional Bruto", value: s.gross_operating_profit, role: "subtotal" },
+    { label: "(−) Despesas Administrativas", value: -s.total_admin },
+    { label: "(−) Despesas Financeiras", value: -s.total_financial_expenses },
+    { label: "(=) Lucro Operacional", value: s.operating_profit, role: "subtotal" },
+    { label: "(+) Receita não Operacional", value: s.non_operational_income },
+    { label: "(=) Lucro antes do IR", value: s.profit_before_tax, role: "subtotal" },
+    { label: "(−) IR", value: -s.income_tax },
+    { label: "(=) Lucro antes do Pró-Labore", value: s.profit_before_prolabore, role: "subtotal" },
+    { label: "(−) Pró-Labore", value: -s.prolabore },
+    { label: "(=) Lucro Líquido do Exercício", value: s.net_profit, role: "total" },
+  ].map((r) => ({ ...r, pctOfNet: pctNet(r.value) }));
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Demonstrativo de resultado</CardTitle>
-        <Badge variant={s.net_result >= 0 ? "default" : "destructive"} className="font-mono">
-          margem {fmtPct(margin)}
+        <CardTitle className="text-base">Demonstrativo de Resultado</CardTitle>
+        <Badge variant={s.net_profit >= 0 ? "default" : "destructive"} className="font-mono">
+          margem líquida {fmtPct(netMargin)}
         </Badge>
       </CardHeader>
       <CardContent>
         <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-2/3">Linha</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right w-24">% RL</TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
             {rows.map((r, i) => {
-              const isResult = r.sign === "=" && r.label.includes("Resultado");
+              const isTotal = r.role === "total";
+              const isSubtotal = r.role === "subtotal";
+              const isSection = r.role === "section";
+              const rowClass =
+                isTotal ? "bg-primary/5 border-t-2 border-primary/30" :
+                isSubtotal ? "bg-muted/40 font-medium" :
+                isSection ? "font-medium" : "";
               const valueColor =
-                isResult ? (r.value >= 0 ? "text-emerald-500" : "text-destructive") :
+                isTotal ? (r.value >= 0 ? "text-emerald-500" : "text-destructive") :
                 r.value < 0 ? "text-destructive/80" :
-                r.value > 0 && r.sign === "+" ? "text-emerald-500/80" :
                 "text-foreground";
               return (
-                <TableRow key={i} className={r.sign === "=" ? "bg-muted/40" : ""}>
-                  <TableCell className={`${r.bold ? "font-semibold" : ""} ${r.indent ? "pl-8 text-muted-foreground text-xs" : ""}`}>
-                    {r.label}
-                    {r.note && <span className="ml-2 text-xs text-muted-foreground italic">({r.note})</span>}
-                  </TableCell>
-                  <TableCell className={`text-right tabular-nums ${r.bold ? "font-bold" : ""} ${valueColor}`}>
+                <TableRow key={i} className={rowClass}>
+                  <TableCell className={isTotal ? "font-bold" : ""}>{r.label}</TableCell>
+                  <TableCell className={`text-right tabular-nums ${valueColor} ${isTotal ? "font-bold" : ""}`}>
                     {fmtBRL(r.value)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-xs text-muted-foreground">
+                    {fmtPct(r.pctOfNet ?? 0)}
                   </TableCell>
                 </TableRow>
               );
             })}
+            {s.excluded_amount > 0 && (
+              <TableRow className="border-t border-dashed">
+                <TableCell className="text-xs text-muted-foreground italic">
+                  Excluído do DRE (sangria, frente de caixa, transferências)
+                </TableCell>
+                <TableCell className="text-right tabular-nums text-xs text-muted-foreground italic">
+                  {fmtBRL(s.excluded_amount)}
+                </TableCell>
+                <TableCell />
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
@@ -191,7 +220,7 @@ export function DRECascade({ start, end }: RangeProps) {
 }
 
 // =====================================================
-// 3. Receita por canal (entrega/balcão/salão/iFood)
+// 3. Receita por canal (mantida)
 // =====================================================
 export function DRERevenueByChannel({ start, end }: RangeProps) {
   const data = useDRERevenueByChannel(start, end);
@@ -232,46 +261,78 @@ export function DRERevenueByChannel({ start, end }: RangeProps) {
 }
 
 // =====================================================
-// 4. Despesas por categoria
+// 4. Despesas agrupadas por grupo DRE (com accordion expansível)
 // =====================================================
-export function DREExpensesByCategory({ start, end }: RangeProps) {
-  const data = useDREExpensesByCategory(start, end);
+const GROUP_ORDER: DREGroup[] = [
+  "tax", "cogs", "sales_cost", "admin", "financial", "income_tax", "prolabore", "exclude",
+];
+
+export function DREExpensesByGroup({ start, end }: RangeProps) {
+  const data = useDREExpensesByGroup(start, end);
+
+  const grouped = useMemo(() => {
+    const rows = data.data ?? [];
+    const map = new Map<DREGroup, { total: number; rows: typeof rows }>();
+    for (const r of rows) {
+      const g = map.get(r.dre_group) ?? { total: 0, rows: [] };
+      g.total += r.amount_total;
+      g.rows.push(r);
+      map.set(r.dre_group, g);
+    }
+    return GROUP_ORDER
+      .filter((g) => map.has(g))
+      .map((g) => ({ group: g, ...map.get(g)! }));
+  }, [data.data]);
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">Despesas por categoria</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-base">Despesas por grupo DRE</CardTitle></CardHeader>
       <CardContent>
         {data.isLoading ? (
           <Skeleton className="h-48 w-full" />
-        ) : !data.data || data.data.length === 0 ? (
+        ) : grouped.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            Nenhuma despesa registrada no período. Verifique se o módulo financeiro do Saipos está sendo sincronizado.
+            Nenhuma despesa registrada no período.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Categoria</TableHead>
-                <TableHead className="text-right">Lançamentos</TableHead>
-                <TableHead className="text-right">Pago</TableHead>
-                <TableHead className="text-right">A pagar</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">% do total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.data.map((row) => (
-                <TableRow key={row.category}>
-                  <TableCell className="font-medium">{row.category}</TableCell>
-                  <TableCell className="text-right tabular-nums">{fmtInt(row.txn_count)}</TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">{fmtBRL(row.paid_amount)}</TableCell>
-                  <TableCell className="text-right tabular-nums text-amber-500/90">{fmtBRL(row.unpaid_amount)}</TableCell>
-                  <TableCell className="text-right tabular-nums font-semibold">{fmtBRL(row.amount_total)}</TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(row.pct_of_total)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Accordion type="multiple" className="w-full">
+            {grouped.map(({ group, total, rows }) => (
+              <AccordionItem key={group} value={group}>
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex w-full items-center justify-between pr-4">
+                    <span className="font-medium">{DRE_GROUP_LABELS[group]}</span>
+                    <span className="tabular-nums font-semibold">{fmtBRL(total)}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead className="text-right">Lançamentos</TableHead>
+                        <TableHead className="text-right">Pago</TableHead>
+                        <TableHead className="text-right">A pagar</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">% grupo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((row) => (
+                        <TableRow key={row.category}>
+                          <TableCell className="font-medium">{row.category}</TableCell>
+                          <TableCell className="text-right tabular-nums">{fmtInt(row.txn_count)}</TableCell>
+                          <TableCell className="text-right tabular-nums text-muted-foreground">{fmtBRL(row.paid_amount)}</TableCell>
+                          <TableCell className="text-right tabular-nums text-amber-500/90">{fmtBRL(row.unpaid_amount)}</TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold">{fmtBRL(row.amount_total)}</TableCell>
+                          <TableCell className="text-right tabular-nums text-muted-foreground">{fmtPct(row.pct_of_group)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         )}
       </CardContent>
     </Card>
@@ -286,9 +347,10 @@ export function DREMonthlyChart({ start, end }: RangeProps) {
 
   const chartData = (series.data ?? []).map((p) => ({
     label: new Date(p.month_bucket + "T00:00:00").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
-    revenue: p.revenue,
-    expenses: p.expenses,
-    result: p.result,
+    net_revenue: p.net_revenue,
+    expenses: p.total_expenses,
+    operating_profit: p.operating_profit,
+    net_profit: p.net_profit,
   }));
 
   return (
@@ -308,9 +370,10 @@ export function DREMonthlyChart({ start, end }: RangeProps) {
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
                 <Tooltip formatter={(v: any) => fmtBRLshort(Number(v ?? 0))} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="revenue" name="Receita líquida" fill="hsl(var(--primary))" />
-                <Bar dataKey="expenses" name="Despesas" fill="hsl(var(--destructive) / 0.7)" />
-                <Line type="monotone" dataKey="result" name="Resultado" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3 }} />
+                <Bar dataKey="net_revenue" name="Receita líquida" fill="hsl(var(--primary))" />
+                <Bar dataKey="expenses" name="Despesas totais" fill="hsl(var(--destructive) / 0.7)" />
+                <Line type="monotone" dataKey="operating_profit" name="Lucro Operacional" stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="net_profit" name="Lucro Líquido" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

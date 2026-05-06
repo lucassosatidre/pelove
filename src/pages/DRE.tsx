@@ -14,7 +14,7 @@ import {
   DREKpiCards,
   DRECascade,
   DRERevenueByChannel,
-  DREExpensesByCategory,
+  DREExpensesByGroup,
   DREMonthlyChart,
 } from "@/components/dre/DREViews";
 
@@ -104,11 +104,8 @@ export default function DRE() {
           <DREKpiCards start={period.start} end={period.end} />
           <DRECascade start={period.start} end={period.end} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DRERevenueByChannel start={period.start} end={period.end} />
-            <DREExpensesByCategory start={period.start} end={period.end} />
-          </div>
-
+          <DRERevenueByChannel start={period.start} end={period.end} />
+          <DREExpensesByGroup start={period.start} end={period.end} />
           <DREMonthlyChart start={period.start} end={period.end} />
         </>
       )}
