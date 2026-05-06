@@ -952,6 +952,60 @@ export type Database = {
           total_delivery_orders: number
         }[]
       }
+      get_dre_data_coverage: {
+        Args: never
+        Returns: {
+          earliest_financial_date: string
+          latest_financial_date: string
+          total_financial_txns: number
+          total_negative_txns: number
+        }[]
+      }
+      get_dre_expenses_by_category: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          amount_total: number
+          category: string
+          paid_amount: number
+          pct_of_total: number
+          txn_count: number
+          unpaid_amount: number
+        }[]
+      }
+      get_dre_monthly_evolution: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          expenses: number
+          month_bucket: string
+          result: number
+          revenue: number
+        }[]
+      }
+      get_dre_revenue_by_channel: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          channel: string
+          orders: number
+          pct_of_total: number
+          revenue: number
+        }[]
+      }
+      get_dre_summary: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          avg_ticket: number
+          delivery_fee_passthrough: number
+          gross_revenue: number
+          net_result: number
+          net_sales_revenue: number
+          other_income: number
+          service_charge_passthrough: number
+          total_discount: number
+          total_expenses: number
+          total_increase: number
+          total_orders: number
+        }[]
+      }
       get_product_by_dow: {
         Args: {
           p_end: string
