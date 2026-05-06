@@ -1,4 +1,4 @@
-import { Map, LogOut, Sun, Moon, Database, BarChart3, Sparkles } from "lucide-react";
+import { Map, LogOut, Sun, Moon, Database, BarChart3, Sparkles, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -18,6 +18,7 @@ import {
 const menuItems = [
   { title: "Mapa Estratégico", url: "/mapa", icon: Map },
   { title: "Dashboards", url: "/dashboards", icon: BarChart3 },
+  { title: "DRE", url: "/dre", icon: FileSpreadsheet },
   { title: "Advisor", url: "/advisor", icon: Sparkles },
   { title: "Integração Saipos", url: "/configuracoes/saipos", icon: Database },
 ];
