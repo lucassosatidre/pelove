@@ -102,19 +102,23 @@ export function useStrategicMap() {
         .order("execution_order");
       if (ae) throw ae;
 
+      const obstaclesList = (obstacles ?? []) as any[];
+      const actionsList = (actions ?? []) as any[];
+      const pillarsList = (pillars ?? []) as any[];
+
       const obstaclesMap = new Map<string, Obstacle>();
-      for (const o of obstacles ?? []) {
+      for (const o of obstaclesList) {
         obstaclesMap.set(o.id, { ...o, actions: [] } as Obstacle);
       }
 
-      for (const a of actions ?? []) {
+      for (const a of actionsList) {
         const obs = obstaclesMap.get(a.obstacle_id);
         if (obs) obs.actions.push(a as Action);
       }
 
-      const result: Pillar[] = (pillars ?? []).map((p) => ({
+      const result: Pillar[] = pillarsList.map((p) => ({
         ...p,
-        obstacles: (obstacles ?? [])
+        obstacles: obstaclesList
           .filter((o) => o.pillar_id === p.id)
           .map((o) => obstaclesMap.get(o.id)!),
       })) as Pillar[];
