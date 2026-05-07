@@ -38,7 +38,7 @@ export async function pendingCount(): Promise<number> {
   return db.mutations.count();
 }
 
-function applyFilterToQuery(q: ReturnType<typeof supabase.from>, filters: Filter[]) {
+function applyFilterToQuery(q: any, filters: Filter[]): any {
   let chain: any = q;
   for (const f of filters) {
     if (f.op === "eq") chain = chain.eq(f.field, f.value);
