@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import MapaEstrategico from "./pages/MapaEstrategico";
 import Dashboards from "./pages/Dashboards";
 import DRE from "./pages/DRE";
+import DREImport from "./pages/DREImport";
 import Advisor from "./pages/Advisor";
 import ConfiguracoesSaipos from "./pages/ConfiguracoesSaipos";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/mapa" element={<MapaEstrategico />} />
               <Route path="/dashboards" element={<Dashboards />} />
               <Route path="/dre" element={<DRE />} />
+              <Route path="/dre/import" element={<DREImport />} />
               <Route path="/advisor" element={<Advisor />} />
               <Route path="/configuracoes/saipos" element={<ConfiguracoesSaipos />} />
             </Route>
