@@ -157,7 +157,12 @@ export function DRECascade({ start, end }: RangeProps) {
     { label: "(=) Lucro antes do Pró-Labore", value: s.profit_before_prolabore, role: "subtotal" },
     { label: "(−) Pró-Labore", value: -s.prolabore },
     { label: "(=) Lucro Líquido do Exercício", value: s.net_profit, role: "total" },
-  ].map((r) => ({ ...r, pctOfNet: pctNet(r.value) }));
+  ].map((r) => ({ ...r, pctOfNet: pctNet(r.value) })) as Array<{
+    label: string;
+    value: number;
+    pctOfNet?: number;
+    role?: "section" | "subtotal" | "total";
+  }>;
 
   return (
     <Card>
