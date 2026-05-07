@@ -208,14 +208,28 @@ async function parseDRExlsx(file: File): Promise<ParsedFile | null> {
 
 function parseNum(v: unknown, isPct = false): number | null {
   if (v == null || v === "") return null;
-  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+
+  // Número JS: usa direto. Se for % e estiver como fração (0.1083), converte pra %.
+  if (typeof v === "number") {
+    if (!Number.isFinite(v)) return null;
+    if (isPct && Math.abs(v) > 0 && Math.abs(v) < 1) return v * 100;
+    return v;
+  }
+
+  // String: detecta formato pelo separador.
   if (typeof v === "string") {
     let s = v.trim().replace("%", "").replace(/\s/g, "");
-    s = s.replace(/\./g, "").replace(",", ".");
+    if (s === "" || s === "-") return null;
+    // Formato BR (1.234,56): tem vírgula → vírgula é decimal, ponto é milhar
+    // Formato US/cru (109.21 ou 1234.56): ponto é decimal (mantém)
+    if (s.includes(",")) {
+      s = s.replace(/\./g, "").replace(",", ".");
+    }
     const n = parseFloat(s);
     if (!Number.isFinite(n)) return null;
-    return isPct ? n : n;
+    return n;
   }
+
   return null;
 }
 
