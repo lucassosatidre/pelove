@@ -56,7 +56,7 @@ interface ParsedRow {
 
 interface ParsedFile {
   filename: string;
-  year: number;
+  period: PeriodRange;
   periods: Array<{ year: number; month: number }>;
   rows: ParsedRow[];
   rowsByPeriod: Map<string, ParsedRow[]>;
@@ -79,14 +79,35 @@ function getLevel(label: string): number {
   return Math.floor(leading / 4);
 }
 
-function extractYearFromFilename(filename: string): number | null {
-  // Casos comuns: "DRE - 01-02-2026 à 28-02-2026.xlsx", "DRE - 01-01-2025 à 31-12-2025.xlsx"
-  const matches = Array.from(filename.matchAll(/(\d{4})/g));
-  for (const m of matches) {
-    const y = parseInt(m[1], 10);
-    if (y >= 2020 && y <= 2050) return y;
-  }
-  return null;
+interface PeriodRange {
+  startYear: number;
+  startMonth: number;
+  endYear: number;
+  endMonth: number;
+}
+
+function extractPeriodFromFilename(filename: string): PeriodRange | null {
+  // Casos: "DRE - 01-02-2026 à 28-02-2026", "DRE - 01-11-2024 à 31-10-2025"
+  const matches = Array.from(filename.matchAll(/(\d{2})-(\d{2})-(\d{4})/g));
+  if (matches.length === 0) return null;
+  const first = matches[0];
+  const last = matches[matches.length - 1];
+  return {
+    startMonth: parseInt(first[2], 10),
+    startYear: parseInt(first[3], 10),
+    endMonth: parseInt(last[2], 10),
+    endYear: parseInt(last[3], 10),
+  };
+}
+
+// Dado um mês (1-12) detectado no header e o período do arquivo,
+// retorna o ano correto. Funciona com períodos que cruzam ano.
+function yearForMonth(month: number, period: PeriodRange): number {
+  // Se start e end são o mesmo ano, fácil
+  if (period.startYear === period.endYear) return period.startYear;
+  // Período cruza ano: meses ≥ startMonth pertencem ao startYear,
+  // meses < startMonth pertencem ao endYear
+  return month >= period.startMonth ? period.startYear : period.endYear;
 }
 
 async function parseDRExlsx(file: File): Promise<ParsedFile | null> {
@@ -98,23 +119,25 @@ async function parseDRExlsx(file: File): Promise<ParsedFile | null> {
 
   if (json.length < 2) return null;
 
-  const year = extractYearFromFilename(file.name);
-  if (!year) {
+  const period = extractPeriodFromFilename(file.name);
+  if (!period) {
     throw new Error(
-      "Não consegui detectar o ano no nome do arquivo. Renomeia pra incluir AAAA (ex: DRE-2026.xlsx).",
+      "Não consegui detectar o período no nome do arquivo. Renomeia pra incluir DD-MM-AAAA à DD-MM-AAAA (ex: DRE - 01-02-2026 à 28-02-2026.xlsx).",
     );
   }
 
   // Header row: ['', 'JANEIRO', '%', 'FEVEREIRO', '%', ..., 'Total', '%']
   const header = (json[0] ?? []) as unknown[];
-  const monthCols: Array<{ month: number; valueCol: number; pctCol: number }> = [];
+  const monthCols: Array<{ month: number; year: number; valueCol: number; pctCol: number }> = [];
   for (let c = 1; c < header.length; c++) {
     const cellRaw = header[c];
     const cell = cellRaw == null ? "" : String(cellRaw).trim().toUpperCase();
     const monthIdx = MONTH_NAMES.indexOf(cell);
     if (monthIdx >= 0) {
+      const month = monthIdx + 1;
       monthCols.push({
-        month: monthIdx + 1,
+        month,
+        year: yearForMonth(month, period),
         valueCol: c,
         pctCol: c + 1, // assume % logo depois
       });
@@ -157,7 +180,7 @@ async function parseDRExlsx(file: File): Promise<ParsedFile | null> {
       const pct = parseNum(pctRaw, true);
 
       rows.push({
-        period_year: year,
+        period_year: mc.year,
         period_month: mc.month,
         line_label: label,
         line_label_clean: labelClean,
@@ -171,7 +194,7 @@ async function parseDRExlsx(file: File): Promise<ParsedFile | null> {
     }
   }
 
-  const periods = monthCols.map((mc) => ({ year, month: mc.month }));
+  const periods = monthCols.map((mc) => ({ year: mc.year, month: mc.month }));
   const rowsByPeriod = new Map<string, ParsedRow[]>();
   for (const r of rows) {
     const key = `${r.period_year}-${String(r.period_month).padStart(2, "0")}`;
@@ -179,7 +202,7 @@ async function parseDRExlsx(file: File): Promise<ParsedFile | null> {
     rowsByPeriod.get(key)!.push(r);
   }
 
-  return { filename: file.name, year, periods, rows, rowsByPeriod };
+  return { filename: file.name, period, periods, rows, rowsByPeriod };
 }
 
 function parseNum(v: unknown, isPct = false): number | null {
@@ -484,7 +507,8 @@ function DRESnapshotImport() {
                 <div>
                   <p className="text-sm font-medium">{parsed.filename}</p>
                   <p className="text-xs text-muted-foreground">
-                    Ano {parsed.year} · {parsed.periods.length} mês(es) · {parsed.rows.length} linhas total
+                    Período {MONTH_NAMES_PT[parsed.period.startMonth - 1]}/{parsed.period.startYear} → {MONTH_NAMES_PT[parsed.period.endMonth - 1]}/{parsed.period.endYear}
+                    {" · "}{parsed.periods.length} mês(es) · {parsed.rows.length} linhas total
                   </p>
                 </div>
                 <Button onClick={handleImport} disabled={importing}>
