@@ -39,6 +39,37 @@ export function useDRESnapshot(year: number | null, month: number | null) {
   });
 }
 
+export interface DRESnapshotMultiRow extends DRESnapshotRow {
+  period_year: number;
+  period_month: number;
+}
+
+export function useDRESnapshotMulti(periods: Array<{ year: number; month: number }>) {
+  return useQuery<DRESnapshotMultiRow[]>({
+    queryKey: ["dre-snapshot", "multi", periods.map((p) => `${p.year}-${p.month}`).sort().join(",")],
+    enabled: periods.length > 0,
+    queryFn: async () => {
+      const { data, error } = await SUPA.rpc("get_dre_snapshot_multi", {
+        p_periods: periods,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        period_year: Number(r.period_year),
+        period_month: Number(r.period_month),
+        ord: Number(r.ord),
+        line_label: r.line_label,
+        line_label_clean: r.line_label_clean,
+        level: Number(r.level),
+        parent_label: r.parent_label,
+        line_type: r.line_type as DRESnapshotRow["line_type"],
+        amount: r.amount != null ? Number(r.amount) : null,
+        pct: r.pct != null ? Number(r.pct) : null,
+      }));
+    },
+    staleTime: 60_000,
+  });
+}
+
 export interface DRESnapshotPeriod {
   period_year: number;
   period_month: number;

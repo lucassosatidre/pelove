@@ -7,18 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, FileText, ListPlus } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, FileText, ListPlus, ChevronRight, ChevronDown, Calendar } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  useDRESnapshot,
+  useDRESnapshotMulti,
   useDRESnapshotPeriods,
   useDRESnapshotImportsLog,
 } from "@/hooks/useDRESnapshot";
@@ -255,22 +256,111 @@ export default function DREv2() {
 }
 
 // ============================================================
-// Visualização
+// Visualização — multi-período + linhas colapsáveis
 // ============================================================
+interface PivotRow {
+  ord: number;
+  line_label: string;
+  line_label_clean: string;
+  level: number;
+  parent_label: string | null;
+  line_type: "section" | "deduction" | "total" | "item";
+  byPeriod: Map<string, { amount: number | null; pct: number | null }>;
+}
+
+function periodKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
 function DRESnapshotView() {
   const periods = useDRESnapshotPeriods();
-  const [year, setYear] = useState<number | null>(null);
-  const [month, setMonth] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Array<{ year: number; month: number }>>([]);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // Default: primeiro período disponível
+  // Default: último período disponível (mais recente)
   useEffect(() => {
-    if (year == null && periods.data && periods.data.length > 0) {
-      setYear(periods.data[0].period_year);
-      setMonth(periods.data[0].period_month);
+    if (selected.length === 0 && periods.data && periods.data.length > 0) {
+      const p = periods.data[0];
+      setSelected([{ year: p.period_year, month: p.period_month }]);
     }
-  }, [periods.data, year]);
+  }, [periods.data, selected.length]);
 
-  const snap = useDRESnapshot(year, month);
+  const snap = useDRESnapshotMulti(selected);
+
+  // Pivot: agrupa por ord e cada período vira uma coluna
+  const pivoted = useMemo<PivotRow[]>(() => {
+    if (!snap.data) return [];
+    const byOrd = new Map<number, PivotRow>();
+    for (const r of snap.data) {
+      let row = byOrd.get(r.ord);
+      if (!row) {
+        row = {
+          ord: r.ord,
+          line_label: r.line_label,
+          line_label_clean: r.line_label_clean,
+          level: r.level,
+          parent_label: r.parent_label,
+          line_type: r.line_type,
+          byPeriod: new Map(),
+        };
+        byOrd.set(r.ord, row);
+      }
+      row.byPeriod.set(periodKey(r.period_year, r.period_month), {
+        amount: r.amount,
+        pct: r.pct,
+      });
+    }
+    return Array.from(byOrd.values()).sort((a, b) => a.ord - b.ord);
+  }, [snap.data]);
+
+  // Map label → row (pra resolver ancestrais rapidinho)
+  const labelToRow = useMemo(() => {
+    const m = new Map<string, PivotRow>();
+    for (const r of pivoted) m.set(r.line_label_clean, r);
+    return m;
+  }, [pivoted]);
+
+  // Map label → tem filho? (pra mostrar caret)
+  const hasChildren = useMemo(() => {
+    const m = new Set<string>();
+    for (const r of pivoted) {
+      if (r.parent_label) m.add(r.parent_label);
+    }
+    return m;
+  }, [pivoted]);
+
+  // Visibilidade: linha visível se TODOS ancestrais estão expanded
+  const isVisible = (row: PivotRow): boolean => {
+    let parent = row.parent_label;
+    while (parent) {
+      if (!expanded.has(parent)) return false;
+      const parentRow = labelToRow.get(parent);
+      parent = parentRow?.parent_label ?? null;
+    }
+    return true;
+  };
+
+  const toggleExpand = (label: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    setExpanded(new Set(Array.from(hasChildren)));
+  };
+  const collapseAll = () => setExpanded(new Set());
+
+  // Ordena selected pra header consistente (mais antigo → mais novo)
+  const orderedPeriods = useMemo(() => {
+    return [...selected].sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.month - b.month;
+    });
+  }, [selected]);
 
   if (periods.isLoading) return <Skeleton className="h-96 w-full" />;
   if (!periods.data || periods.data.length === 0) {
@@ -287,61 +377,108 @@ function DRESnapshotView() {
     );
   }
 
+  const togglePeriod = (year: number, month: number) => {
+    setSelected((prev) => {
+      const exists = prev.some((p) => p.year === year && p.month === month);
+      if (exists) return prev.filter((p) => !(p.year === year && p.month === month));
+      return [...prev, { year, month }];
+    });
+  };
+
+  const visibleRows = pivoted.filter(isVisible);
+
   return (
     <div className="space-y-4">
       <Card>
         <CardContent className="p-4 flex flex-wrap items-center gap-3">
-          <Label className="text-xs">Período</Label>
-          <Select
-            value={year && month ? `${year}-${month}` : undefined}
-            onValueChange={(v) => {
-              const [y, m] = v.split("-").map(Number);
-              setYear(y);
-              setMonth(m);
-            }}
-          >
-            <SelectTrigger className="h-9 w-64 text-sm">
-              <SelectValue placeholder="Escolha mês" />
-            </SelectTrigger>
-            <SelectContent>
-              {periods.data.map((p) => (
-                <SelectItem key={`${p.period_year}-${p.period_month}`} value={`${p.period_year}-${p.period_month}`}>
-                  {MONTH_NAMES_PT[p.period_month - 1]} {p.period_year} ({p.rows_count} linhas)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {year && month && (
-            <Badge variant="outline" className="ml-auto text-xs">
-              {MONTH_NAMES_PT[month - 1]}/{year}
-            </Badge>
-          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 min-w-48">
+                <Calendar className="w-4 h-4" />
+                {selected.length === 0
+                  ? "Escolher meses"
+                  : selected.length === 1
+                  ? `${MONTH_NAMES_PT[selected[0].month - 1]}/${selected[0].year}`
+                  : `${selected.length} meses selecionados`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="start">
+              <div className="p-2 border-b flex items-center justify-between">
+                <span className="text-xs font-medium">Períodos disponíveis</span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setSelected(periods.data!.map((p) => ({ year: p.period_year, month: p.period_month })))}>
+                    Todos
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setSelected([])}>
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {periods.data!.map((p) => {
+                  const checked = selected.some((s) => s.year === p.period_year && s.month === p.period_month);
+                  return (
+                    <label
+                      key={`${p.period_year}-${p.period_month}`}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer text-sm"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => togglePeriod(p.period_year, p.period_month)}
+                      />
+                      <span className="flex-1">{MONTH_NAMES_PT[p.period_month - 1]} {p.period_year}</span>
+                      <span className="text-xs text-muted-foreground">{p.rows_count} linhas</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <div className="flex gap-1 ml-auto">
+            <Button variant="ghost" size="sm" className="text-xs" onClick={expandAll}>
+              Expandir tudo
+            </Button>
+            <Button variant="ghost" size="sm" className="text-xs" onClick={collapseAll}>
+              Colapsar tudo
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">DRE Gerencial — {year && month ? `${MONTH_NAMES_PT[month - 1]}/${year}` : ""}</CardTitle>
+          <CardTitle className="text-base">DRE Gerencial</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {snap.isLoading ? (
             <Skeleton className="h-96 w-full" />
-          ) : !snap.data || snap.data.length === 0 ? (
-            <p className="p-8 text-sm text-muted-foreground text-center">Sem dados pra esse período</p>
+          ) : visibleRows.length === 0 ? (
+            <p className="p-8 text-sm text-muted-foreground text-center">
+              {selected.length === 0 ? "Selecione ao menos um mês" : "Sem dados nos períodos escolhidos"}
+            </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-2/3">Linha</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-right w-24">%</TableHead>
+                  <TableHead className="min-w-72 sticky left-0 bg-background z-10">Linha</TableHead>
+                  {orderedPeriods.map((p) => (
+                    <TableHead key={periodKey(p.year, p.month)} className="text-right min-w-32">
+                      <div className="font-medium">{MONTH_NAMES_PT[p.month - 1].slice(0, 3)}/{String(p.year).slice(-2)}</div>
+                    </TableHead>
+                  ))}
+                  {orderedPeriods.length === 1 && (
+                    <TableHead className="text-right w-20">%</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {snap.data.map((r) => {
+                {visibleRows.map((r) => {
                   const isTotal = r.line_type === "total";
                   const isSection = r.line_type === "section";
                   const isDeduction = r.line_type === "deduction";
+                  const canExpand = hasChildren.has(r.line_label_clean);
+                  const isExpanded = expanded.has(r.line_label_clean);
 
                   let rowClass = "";
                   if (isTotal && r.level === 0) rowClass = "bg-primary/10 border-y border-primary/30 font-bold";
@@ -350,22 +487,49 @@ function DRESnapshotView() {
                   else if (isDeduction && r.level === 0) rowClass = "font-semibold text-destructive";
 
                   const indent = r.level * 16;
-                  const valueColor =
-                    isTotal ? (r.amount != null && r.amount >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive") :
-                    r.amount != null && r.amount < 0 ? "text-destructive/80" :
-                    "";
+                  const cursor = canExpand ? "cursor-pointer" : "cursor-default";
 
                   return (
-                    <TableRow key={r.ord} className={rowClass}>
-                      <TableCell className="py-1.5">
-                        <span style={{ paddingLeft: `${indent}px` }}>{r.line_label_clean}</span>
+                    <TableRow
+                      key={r.ord}
+                      className={`${rowClass} ${cursor}`}
+                      onClick={() => canExpand && toggleExpand(r.line_label_clean)}
+                    >
+                      <TableCell className="py-1.5 sticky left-0 bg-inherit z-10">
+                        <div className="flex items-center" style={{ paddingLeft: `${indent}px` }}>
+                          {canExpand ? (
+                            isExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5 mr-1 shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5 mr-1 shrink-0" />
+                            )
+                          ) : (
+                            <span className="w-3.5 mr-1" />
+                          )}
+                          <span>{r.line_label_clean}</span>
+                        </div>
                       </TableCell>
-                      <TableCell className={`text-right tabular-nums py-1.5 ${valueColor}`}>
-                        {fmtBRL(r.amount)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-xs text-muted-foreground py-1.5">
-                        {fmtPct(r.pct)}
-                      </TableCell>
+                      {orderedPeriods.map((p) => {
+                        const cell = r.byPeriod.get(periodKey(p.year, p.month));
+                        const amt = cell?.amount ?? null;
+                        const valueColor =
+                          isTotal ? (amt != null && amt >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive") :
+                          amt != null && amt < 0 ? "text-destructive/80" :
+                          "";
+                        return (
+                          <TableCell
+                            key={periodKey(p.year, p.month)}
+                            className={`text-right tabular-nums py-1.5 ${valueColor}`}
+                          >
+                            {fmtBRL(amt)}
+                          </TableCell>
+                        );
+                      })}
+                      {orderedPeriods.length === 1 && (
+                        <TableCell className="text-right tabular-nums text-xs text-muted-foreground py-1.5">
+                          {fmtPct(r.byPeriod.get(periodKey(orderedPeriods[0].year, orderedPeriods[0].month))?.pct ?? null)}
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
