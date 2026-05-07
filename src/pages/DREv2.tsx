@@ -301,12 +301,14 @@ function DRESnapshotView() {
 
   const snap = useDRESnapshotMulti(selected);
 
-  // Pivot: agrupa por ord e cada período vira uma coluna
+  // Pivot: agrupa por (level + label_clean) — robusto contra mudanças de
+  // ordem entre imports. Mantém o menor ord pra preservar a ordem original.
   const pivoted = useMemo<PivotRow[]>(() => {
     if (!snap.data) return [];
-    const byOrd = new Map<number, PivotRow>();
+    const byKey = new Map<string, PivotRow>();
     for (const r of snap.data) {
-      let row = byOrd.get(r.ord);
+      const key = `${r.level}::${r.line_label_clean}`;
+      let row = byKey.get(key);
       if (!row) {
         row = {
           ord: r.ord,
@@ -317,14 +319,17 @@ function DRESnapshotView() {
           line_type: r.line_type,
           byPeriod: new Map(),
         };
-        byOrd.set(r.ord, row);
+        byKey.set(key, row);
+      } else if (r.ord < row.ord) {
+        // Linha apareceu em outro período com ord menor — usa esse pra ordenação
+        row.ord = r.ord;
       }
       row.byPeriod.set(periodKey(r.period_year, r.period_month), {
         amount: r.amount,
         pct: r.pct,
       });
     }
-    return Array.from(byOrd.values()).sort((a, b) => a.ord - b.ord);
+    return Array.from(byKey.values()).sort((a, b) => a.ord - b.ord);
   }, [snap.data]);
 
   // Map label → row (pra resolver ancestrais rapidinho)
