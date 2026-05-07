@@ -221,16 +221,12 @@ export function DRECascade({ start, end }: RangeProps) {
         </Table>
 
         <div className="mt-4 p-3 rounded-md bg-muted/30 text-xs text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground">⚠️ Diferença esperada vs. DRE Gerencial do Saipos</p>
+          <p className="font-medium text-foreground">⚠️ Sobre o CMV</p>
           <p>
-            <strong>Custo com Vendas</strong> aqui só inclui categorias do módulo financeiro
-            (Motoboy, Marketing, Gasolina, etc). O DRE do Saipos calcula adicionalmente comissão de
-            marketplace (iFood/Brendi), taxas de cartão e logística terceirizada a partir das próprias
-            vendas — esses valores não estão lançados em <code className="text-[10px] bg-muted px-1 rounded">saipos_financial</code>.
-          </p>
-          <p>
-            <strong>CMV</strong> usa apenas a categoria "Matéria Prima"; o Saipos quebra em Frios/Secos/Bebidas
-            via subcategoria interna que não vem na API.
+            O CMV (Custo das Mercadorias Vendidas) é o <strong>custo consumido</strong> da operação,
+            calculado pelo Saipos via baixa de estoque (inventário). Compras de matéria-prima são
+            patrimônio (estoque), não despesa do DRE. Como a API do Saipos não expõe movimentação
+            de estoque, o CMV aqui ficará zerado — consulte o DRE Gerencial do Saipos pro valor real.
           </p>
         </div>
       </CardContent>
