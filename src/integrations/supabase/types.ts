@@ -1213,6 +1213,21 @@ export type Database = {
           rows_replaced: number
         }[]
       }
+      get_dre_snapshot_multi: {
+        Args: { p_periods: Json }
+        Returns: {
+          amount: number
+          level: number
+          line_label: string
+          line_label_clean: string
+          line_type: string
+          ord: number
+          parent_label: string
+          pct: number
+          period_month: number
+          period_year: number
+        }[]
+      }
       get_dre_snapshot_periods: {
         Args: never
         Returns: {
