@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, Fragment } from "react";
 import * as XLSX from "xlsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -477,12 +477,25 @@ function DRESnapshotView() {
                 <TableRow>
                   <TableHead className="min-w-72 sticky left-0 bg-background z-10">Linha</TableHead>
                   {orderedPeriods.map((p) => (
-                    <TableHead key={periodKey(p.year, p.month)} className="text-right min-w-32">
-                      <div className="font-medium">{MONTH_NAMES_PT[p.month - 1].slice(0, 3)}/{String(p.year).slice(-2)}</div>
-                    </TableHead>
+                    <Fragment key={periodKey(p.year, p.month)}>
+                      <TableHead className="text-right min-w-28 pr-1">
+                        <div className="font-medium">{MONTH_NAMES_PT[p.month - 1].slice(0, 3)}/{String(p.year).slice(-2)}</div>
+                      </TableHead>
+                      <TableHead className="text-right w-16 pl-1 text-muted-foreground">%</TableHead>
+                    </Fragment>
                   ))}
-                  {orderedPeriods.length === 1 && (
-                    <TableHead className="text-right w-20">%</TableHead>
+                  {orderedPeriods.length >= 2 && (
+                    <>
+                      <TableHead className="text-right min-w-28 pr-1 border-l">
+                        <div className="font-medium">Δ R$</div>
+                        <div className="text-[10px] text-muted-foreground font-normal">
+                          {MONTH_NAMES_PT[orderedPeriods[orderedPeriods.length - 1].month - 1].slice(0, 3)}/{String(orderedPeriods[orderedPeriods.length - 1].year).slice(-2)}
+                          {" − "}
+                          {MONTH_NAMES_PT[orderedPeriods[0].month - 1].slice(0, 3)}/{String(orderedPeriods[0].year).slice(-2)}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-right w-20 pl-1">Δ %</TableHead>
+                    </>
                   )}
                 </TableRow>
               </TableHeader>
@@ -502,6 +515,37 @@ function DRESnapshotView() {
 
                   const indent = r.level * 16;
                   const cursor = canExpand ? "cursor-pointer" : "cursor-default";
+
+                  // Δ: último período − primeiro período (na ordem cronológica)
+                  let deltaCells: React.ReactNode = null;
+                  if (orderedPeriods.length >= 2) {
+                    const firstP = orderedPeriods[0];
+                    const lastP = orderedPeriods[orderedPeriods.length - 1];
+                    const firstCell = r.byPeriod.get(periodKey(firstP.year, firstP.month));
+                    const lastCell = r.byPeriod.get(periodKey(lastP.year, lastP.month));
+                    const a = firstCell?.amount ?? null;
+                    const b = lastCell?.amount ?? null;
+                    const haveBoth = a != null && b != null;
+                    const delta = haveBoth ? b - a : null;
+                    // Variação % usa o valor absoluto do primeiro pra não bagunçar com sinal negativo
+                    const deltaPct = haveBoth && a !== 0 ? (delta! / Math.abs(a)) * 100 : null;
+                    const deltaColor =
+                      delta == null ? "text-muted-foreground" :
+                      // Pra deduções/despesas (valor negativo), uma redução em magnitude é melhoria → verde
+                      isDeduction || (a != null && a < 0)
+                        ? (delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")
+                        : (delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive");
+                    deltaCells = (
+                      <>
+                        <TableCell className={`text-right tabular-nums py-1.5 pr-1 border-l ${deltaColor}`}>
+                          {delta == null ? "—" : `${delta > 0 ? "+" : ""}${fmtBRL(delta)}`}
+                        </TableCell>
+                        <TableCell className={`text-right tabular-nums text-xs py-1.5 pl-1 ${deltaColor}`}>
+                          {deltaPct == null ? "—" : `${deltaPct > 0 ? "+" : ""}${deltaPct.toFixed(1)}%`}
+                        </TableCell>
+                      </>
+                    );
+                  }
 
                   return (
                     <TableRow
@@ -526,24 +570,23 @@ function DRESnapshotView() {
                       {orderedPeriods.map((p) => {
                         const cell = r.byPeriod.get(periodKey(p.year, p.month));
                         const amt = cell?.amount ?? null;
+                        const pct = cell?.pct ?? null;
                         const valueColor =
                           isTotal ? (amt != null && amt >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive") :
                           amt != null && amt < 0 ? "text-destructive/80" :
                           "";
                         return (
-                          <TableCell
-                            key={periodKey(p.year, p.month)}
-                            className={`text-right tabular-nums py-1.5 ${valueColor}`}
-                          >
-                            {fmtBRL(amt)}
-                          </TableCell>
+                          <Fragment key={periodKey(p.year, p.month)}>
+                            <TableCell className={`text-right tabular-nums py-1.5 pr-1 ${valueColor}`}>
+                              {fmtBRL(amt)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums text-xs text-muted-foreground py-1.5 pl-1">
+                              {fmtPct(pct)}
+                            </TableCell>
+                          </Fragment>
                         );
                       })}
-                      {orderedPeriods.length === 1 && (
-                        <TableCell className="text-right tabular-nums text-xs text-muted-foreground py-1.5">
-                          {fmtPct(r.byPeriod.get(periodKey(orderedPeriods[0].year, orderedPeriods[0].month))?.pct ?? null)}
-                        </TableCell>
-                      )}
+                      {deltaCells}
                     </TableRow>
                   );
                 })}
