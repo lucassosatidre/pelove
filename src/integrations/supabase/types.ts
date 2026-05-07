@@ -568,6 +568,99 @@ export type Database = {
         }
         Relationships: []
       }
+      saipos_financial_imports: {
+        Row: {
+          filename: string
+          id: string
+          imported_at: string
+          imported_by: string | null
+          period_end: string | null
+          period_start: string | null
+          rows_inserted: number
+          rows_skipped_duplicate: number
+          rows_total: number
+          total_amount: number | null
+        }
+        Insert: {
+          filename: string
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          rows_inserted?: number
+          rows_skipped_duplicate?: number
+          rows_total?: number
+          total_amount?: number | null
+        }
+        Update: {
+          filename?: string
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          rows_inserted?: number
+          rows_skipped_duplicate?: number
+          rows_total?: number
+          total_amount?: number | null
+        }
+        Relationships: []
+      }
+      saipos_financial_manual: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string | null
+          fornecedor: string | null
+          id: number
+          import_id: string
+          issuance_date: string | null
+          paid: boolean | null
+          payment_date: string | null
+          payment_method: string | null
+          raw_row: Json
+          source: string
+          unique_hash: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          date: string
+          description?: string | null
+          fornecedor?: string | null
+          id?: number
+          import_id: string
+          issuance_date?: string | null
+          paid?: boolean | null
+          payment_date?: string | null
+          payment_method?: string | null
+          raw_row: Json
+          source?: string
+          unique_hash: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          fornecedor?: string | null
+          id?: number
+          import_id?: string
+          issuance_date?: string | null
+          paid?: boolean | null
+          payment_date?: string | null
+          payment_method?: string | null
+          raw_row?: Json
+          source?: string
+          unique_hash?: string
+        }
+        Relationships: []
+      }
       saipos_sales: {
         Row: {
           canceled: boolean | null
@@ -918,7 +1011,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dre_financial_unified: {
+        Row: {
+          amount: number | null
+          category: string | null
+          description: string | null
+          effective_date: string | null
+          paid: boolean | null
+          source: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       date_bucket: {
@@ -972,6 +1075,20 @@ export type Database = {
           pct_of_group: number
           txn_count: number
           unpaid_amount: number
+        }[]
+      }
+      get_dre_imports_log: {
+        Args: { p_limit?: number }
+        Returns: {
+          filename: string
+          id: string
+          imported_at: string
+          period_end: string
+          period_start: string
+          rows_inserted: number
+          rows_skipped_duplicate: number
+          rows_total: number
+          total_amount: number
         }[]
       }
       get_dre_monthly_evolution: {
