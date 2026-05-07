@@ -925,6 +925,7 @@ export type Database = {
         Args: { p_date: string; p_granularity: string }
         Returns: string
       }
+      dre_classify_category: { Args: { p_cat: string }; Returns: string }
       get_cancellations: {
         Args: { p_end: string; p_sale_types?: number[]; p_start: string }
         Returns: {
@@ -961,13 +962,14 @@ export type Database = {
           total_negative_txns: number
         }[]
       }
-      get_dre_expenses_by_category: {
+      get_dre_expenses_by_group: {
         Args: { p_end: string; p_start: string }
         Returns: {
           amount_total: number
           category: string
+          dre_group: string
           paid_amount: number
-          pct_of_total: number
+          pct_of_group: number
           txn_count: number
           unpaid_amount: number
         }[]
@@ -975,10 +977,12 @@ export type Database = {
       get_dre_monthly_evolution: {
         Args: { p_end: string; p_start: string }
         Returns: {
-          expenses: number
+          gross_revenue: number
           month_bucket: string
-          result: number
-          revenue: number
+          net_profit: number
+          net_revenue: number
+          operating_profit: number
+          total_expenses: number
         }[]
       }
       get_dre_revenue_by_channel: {
@@ -994,16 +998,23 @@ export type Database = {
         Args: { p_end: string; p_start: string }
         Returns: {
           avg_ticket: number
-          delivery_fee_passthrough: number
+          excluded_amount: number
+          gross_operating_profit: number
           gross_revenue: number
-          net_result: number
-          net_sales_revenue: number
-          other_income: number
-          service_charge_passthrough: number
-          total_discount: number
-          total_expenses: number
-          total_increase: number
+          income_tax: number
+          net_profit: number
+          net_revenue: number
+          non_operational_income: number
+          operating_profit: number
+          profit_before_prolabore: number
+          profit_before_tax: number
+          prolabore: number
+          total_admin: number
+          total_cogs: number
+          total_financial_expenses: number
           total_orders: number
+          total_sales_cost: number
+          total_taxes: number
         }[]
       }
       get_product_by_dow: {
