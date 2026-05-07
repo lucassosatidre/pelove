@@ -302,6 +302,84 @@ export type Database = {
         }
         Relationships: []
       }
+      dre_snapshot: {
+        Row: {
+          amount: number | null
+          id: number
+          import_id: string
+          imported_at: string
+          level: number
+          line_label: string
+          line_label_clean: string
+          line_type: string
+          ord: number
+          parent_label: string | null
+          pct: number | null
+          period_month: number
+          period_year: number
+        }
+        Insert: {
+          amount?: number | null
+          id?: number
+          import_id: string
+          imported_at?: string
+          level?: number
+          line_label: string
+          line_label_clean: string
+          line_type?: string
+          ord: number
+          parent_label?: string | null
+          pct?: number | null
+          period_month: number
+          period_year: number
+        }
+        Update: {
+          amount?: number | null
+          id?: number
+          import_id?: string
+          imported_at?: string
+          level?: number
+          line_label?: string
+          line_label_clean?: string
+          line_type?: string
+          ord?: number
+          parent_label?: string | null
+          pct?: number | null
+          period_month?: number
+          period_year?: number
+        }
+        Relationships: []
+      }
+      dre_snapshot_imports: {
+        Row: {
+          filename: string
+          id: string
+          imported_at: string
+          imported_by: string | null
+          periods_imported: string[]
+          rows_inserted: number
+          rows_replaced: number
+        }
+        Insert: {
+          filename: string
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          periods_imported: string[]
+          rows_inserted?: number
+          rows_replaced?: number
+        }
+        Update: {
+          filename?: string
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          periods_imported?: string[]
+          rows_inserted?: number
+          rows_replaced?: number
+        }
+        Relationships: []
+      }
       obstacles: {
         Row: {
           bg_color: string | null
@@ -1109,6 +1187,39 @@ export type Database = {
           orders: number
           pct_of_total: number
           revenue: number
+        }[]
+      }
+      get_dre_snapshot: {
+        Args: { p_month: number; p_year: number }
+        Returns: {
+          amount: number
+          level: number
+          line_label: string
+          line_label_clean: string
+          line_type: string
+          ord: number
+          parent_label: string
+          pct: number
+        }[]
+      }
+      get_dre_snapshot_imports_log: {
+        Args: { p_limit?: number }
+        Returns: {
+          filename: string
+          id: string
+          imported_at: string
+          periods_imported: string[]
+          rows_inserted: number
+          rows_replaced: number
+        }[]
+      }
+      get_dre_snapshot_periods: {
+        Args: never
+        Returns: {
+          imported_at: string
+          period_month: number
+          period_year: number
+          rows_count: number
         }[]
       }
       get_dre_summary: {
