@@ -220,14 +220,25 @@ export function DRECascade({ start, end }: RangeProps) {
           </TableBody>
         </Table>
 
-        <div className="mt-4 p-3 rounded-md bg-muted/30 text-xs text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground">⚠️ Sobre o CMV</p>
-          <p>
-            O CMV (Custo das Mercadorias Vendidas) é o <strong>custo consumido</strong> da operação,
-            calculado pelo Saipos via baixa de estoque (inventário). Compras de matéria-prima são
-            patrimônio (estoque), não despesa do DRE. Como a API do Saipos não expõe movimentação
-            de estoque, o CMV aqui ficará zerado — consulte o DRE Gerencial do Saipos pro valor real.
-          </p>
+        <div className="mt-4 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs space-y-2">
+          <p className="font-medium text-amber-600 dark:text-amber-400">⚠️ DRE Operacional — limitações conhecidas vs. DRE Gerencial do Saipos</p>
+          <div className="space-y-1.5 text-muted-foreground">
+            <p>
+              <strong className="text-foreground">CMV zerado:</strong> O Saipos calcula o CMV via baixa de estoque/inventário.
+              Compras de matéria-prima são patrimônio (estoque), não despesa do DRE.
+              A API do Saipos não expõe movimentação de estoque.
+            </p>
+            <p>
+              <strong className="text-foreground">Motoboy parcial:</strong> A API do Saipos só entrega as linhas-mãe agregadas
+              de "Acerto com entregadores" (com valor zero); os acertos individuais por entregador
+              (ex: "Acerto - Mauricio - 28/02") ficam só no Excel exportado.
+              Em Fev/26 isso significou ~R$ 46k de Motoboy faltando.
+            </p>
+            <p className="pt-1 border-t border-amber-500/20">
+              <strong className="text-foreground">Resultado:</strong> use este DRE pra acompanhar tendências.
+              Pro fechamento contábil mensal, use o DRE Gerencial do Saipos.
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
