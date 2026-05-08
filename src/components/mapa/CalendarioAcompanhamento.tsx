@@ -38,6 +38,28 @@ const DATE_BUCKET_LABEL: Record<DateBucket, string> = {
   no_date: "Sem prazo",
 };
 
+// Os textos no banco vêm do RichInlineText, então podem conter HTML
+// (<p>, <strong>, <br>, &gt; etc). No calendário renderizamos como texto
+// plano, então removemos tags e decodificamos entidades antes de exibir.
+function stripHtml(input: string | null | undefined): string {
+  if (!input) return "";
+  let s = String(input);
+  // Bloco vira espaço pra não colar palavras quando há vários <p>
+  s = s.replace(/<\s*br\s*\/?\s*>/gi, " ");
+  s = s.replace(/<\/(p|div|li|h[1-6])>/gi, " ");
+  s = s.replace(/<[^>]+>/g, "");
+  // Entidades comuns
+  s = s
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'");
+  // Colapsa espaços
+  return s.replace(/\s+/g, " ").trim();
+}
+
 function flatten(pillars: Pillar[]): FlatAction[] {
   const out: FlatAction[] = [];
   for (const p of pillars) {
@@ -49,11 +71,14 @@ function flatten(pillars: Pillar[]): FlatAction[] {
           .filter(Boolean);
         out.push({
           ...a,
+          description: stripHtml(a.description),
+          expected_result: a.expected_result ? stripHtml(a.expected_result) : null,
+          deliverable: a.deliverable ? stripHtml(a.deliverable) : null,
           pillar_id: p.id,
-          pillar_name: p.name,
+          pillar_name: stripHtml(p.name),
           pillar_number: p.number,
-          obstacle_code: o.code,
-          obstacle_description: o.description,
+          obstacle_code: stripHtml(o.code),
+          obstacle_description: o.description ? stripHtml(o.description) : null,
           responsibles,
           computed_status: getComputedStatus(a),
         });
@@ -594,7 +619,7 @@ export function CalendarioAcompanhamento() {
               <SelectContent>
                 <SelectItem value="all" className="text-xs">Todos os pilares</SelectItem>
                 {pillars?.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="text-xs">{p.number}. {p.name}</SelectItem>
+                  <SelectItem key={p.id} value={p.id} className="text-xs">{p.number}. {stripHtml(p.name)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
