@@ -1,0 +1,253 @@
+/* Estilos para impressão A4 P&B do Mapa Estratégico e do Calendário.
+   Carregado pelas rotas /mapa/imprimir e /mapa/calendario/imprimir. */
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm 12mm 10mm;
+}
+
+/* Tela: simula a folha A4 com sombra para a pessoa ver como vai sair antes de mandar imprimir */
+.print-screen {
+  background: #e5e5e5;
+  min-height: 100vh;
+  padding: 24px 16px 96px;
+}
+
+.print-screen .print-doc {
+  background: #ffffff;
+  color: #000000;
+  width: 210mm;
+  margin: 0 auto;
+  padding: 12mm 10mm;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 10pt;
+  line-height: 1.35;
+}
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -24px -16px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.print-toolbar h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+
+.print-toolbar button {
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.print-toolbar button:hover { background: #f0f0f0; }
+
+.print-toolbar a {
+  color: #ffffff;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+/* ---- Conteúdo do documento ---- */
+
+.print-doc h1 {
+  font-size: 18pt;
+  font-weight: 700;
+  margin: 0 0 4pt 0;
+  letter-spacing: 0.2px;
+}
+
+.print-doc h2.print-pillar-title,
+.print-doc h2.print-person-title {
+  font-size: 13pt;
+  font-weight: 700;
+  margin: 14pt 0 6pt 0;
+  padding-bottom: 3pt;
+  border-bottom: 1.5pt solid #000;
+  page-break-after: avoid;
+}
+
+.print-doc h3.print-obstacle-title {
+  font-size: 10.5pt;
+  font-weight: 700;
+  margin: 8pt 0 3pt 0;
+  padding-left: 4pt;
+  border-left: 2pt solid #000;
+  page-break-after: avoid;
+}
+
+.print-obstacle-code { font-weight: 700; }
+.print-obstacle-desc { font-weight: 500; }
+
+.print-subtitle {
+  font-size: 9pt;
+  margin: 0 0 8pt 0;
+  color: #444;
+}
+
+.print-vision {
+  border: 1pt solid #000;
+  padding: 6pt 8pt;
+  margin: 8pt 0 12pt 0;
+  page-break-inside: avoid;
+}
+
+.print-vision-label {
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 2pt 0;
+}
+
+.print-vision-text {
+  margin: 0;
+  font-size: 10pt;
+  white-space: pre-wrap;
+}
+
+.print-empty {
+  font-style: italic;
+  color: #777;
+  margin: 4pt 0;
+  font-size: 9pt;
+}
+
+.print-pillar { page-break-inside: auto; margin-bottom: 6pt; }
+.print-obstacle { page-break-inside: avoid; margin: 6pt 0; }
+
+/* ---- Tabela de ações ---- */
+
+.print-actions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin: 4pt 0 8pt 0;
+  page-break-inside: auto;
+}
+
+.print-actions-table thead { display: table-header-group; }
+.print-actions-table tr { page-break-inside: avoid; }
+
+.print-actions-table th,
+.print-actions-table td {
+  border: 0.5pt solid #000;
+  padding: 3pt 5pt;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.print-actions-table th {
+  background: #000 !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Status: usa preenchimento por padrões e bordas em vez de cor */
+
+.print-status { font-weight: 700; text-align: center; white-space: nowrap; }
+.print-status-concluido { background: #000; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.print-status-atrasado { background: repeating-linear-gradient(45deg, #000 0 2pt, #fff 2pt 5pt); color: #000; border: 1pt solid #000; }
+.print-status-em_andamento { background: #555 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.print-status-agendado { background: #ddd !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.print-status-nao_iniciado { background: #fff; color: #000; }
+
+/* ---- Calendário (Por pessoa) ---- */
+
+.print-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+  margin: 6pt 0 12pt 0;
+}
+
+.print-summary-table th,
+.print-summary-table td {
+  border: 0.5pt solid #000;
+  padding: 4pt 6pt;
+  text-align: center;
+}
+
+.print-summary-table th {
+  background: #000 !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 8pt;
+  text-transform: uppercase;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.print-person-section { page-break-inside: auto; margin-bottom: 12pt; }
+
+.print-person-count { font-size: 10pt; font-weight: 400; color: #555; }
+.print-person-counts {
+  font-size: 8.5pt;
+  color: #444;
+  margin: 0 0 4pt 0;
+  font-style: italic;
+}
+
+/* ---- Footer ---- */
+
+.print-footer {
+  margin-top: 16pt;
+  padding-top: 6pt;
+  border-top: 0.5pt solid #000;
+  text-align: center;
+  font-size: 8pt;
+  color: #555;
+}
+
+.print-loading {
+  padding: 40pt;
+  text-align: center;
+  font-size: 11pt;
+  color: #555;
+}
+
+/* ---- Regras só para impressão ---- */
+
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .print-screen { background: #fff !important; padding: 0; }
+  .print-toolbar { display: none !important; }
+
+  .print-screen .print-doc {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  /* Esconde qualquer elemento da app fora do print-doc se vazar */
+  body > *:not(#root) { display: none !important; }
+  #root > *:not(.print-screen) { display: none !important; }
+}

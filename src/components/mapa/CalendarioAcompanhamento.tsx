@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle, CalendarClock, CheckCircle2, Clock3, Users, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { stripHtml } from "@/lib/text";
 import {
   useStrategicMap,
   getComputedStatus,
@@ -37,28 +38,6 @@ const DATE_BUCKET_LABEL: Record<DateBucket, string> = {
   next_30: "Próximos 30 dias",
   no_date: "Sem prazo",
 };
-
-// Os textos no banco vêm do RichInlineText, então podem conter HTML
-// (<p>, <strong>, <br>, &gt; etc). No calendário renderizamos como texto
-// plano, então removemos tags e decodificamos entidades antes de exibir.
-function stripHtml(input: string | null | undefined): string {
-  if (!input) return "";
-  let s = String(input);
-  // Bloco vira espaço pra não colar palavras quando há vários <p>
-  s = s.replace(/<\s*br\s*\/?\s*>/gi, " ");
-  s = s.replace(/<\/(p|div|li|h[1-6])>/gi, " ");
-  s = s.replace(/<[^>]+>/g, "");
-  // Entidades comuns
-  s = s
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, "\"")
-    .replace(/&#39;/g, "'");
-  // Colapsa espaços
-  return s.replace(/\s+/g, " ").trim();
-}
 
 // No calendário queremos mostrar o ENTREGÁVEL (deliverable) em vez da Ação,
 // porque é o resultado palpável que cada pessoa tem que produzir.

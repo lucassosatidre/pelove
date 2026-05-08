@@ -14,6 +14,8 @@ import DREImport from "./pages/DREImport";
 import DREv2 from "./pages/DREv2";
 import Advisor from "./pages/Advisor";
 import ConfiguracoesSaipos from "./pages/ConfiguracoesSaipos";
+import MapaImprimir from "./pages/MapaImprimir";
+import CalendarioImprimir from "./pages/CalendarioImprimir";
 import NotFound from "./pages/NotFound";
 import { startSyncEngine, onMutationChange } from "@/lib/offline/sync";
 
@@ -44,6 +46,9 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            {/* Rotas de impressão fora do AppLayout pra não puxar sidebar/floating advisor */}
+            <Route path="/mapa/imprimir" element={<MapaImprimir />} />
+            <Route path="/mapa/calendario/imprimir" element={<CalendarioImprimir />} />
             <Route element={<AppLayout />}>
               <Route path="/mapa" element={<MapaEstrategico />} />
               <Route path="/dashboards" element={<Dashboards />} />

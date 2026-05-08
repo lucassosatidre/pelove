@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Map as MapIcon, CalendarRange } from "lucide-react";
+import { Map as MapIcon, CalendarRange, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MindMapLayout } from "@/components/mapa/MindMapLayout";
 import { CalendarioAcompanhamento } from "@/components/mapa/CalendarioAcompanhamento";
@@ -22,6 +22,8 @@ export default function MapaEstrategico() {
     window.history.replaceState(null, "", url.toString());
   };
 
+  const printUrl = view === "mapa" ? "/mapa/imprimir" : "/mapa/calendario/imprimir";
+
   return (
     <div className="flex flex-col h-full relative">
       <div className="flex items-center justify-between border-b border-border px-4 h-11 shrink-0">
@@ -33,7 +35,19 @@ export default function MapaEstrategico() {
             Calendário / Acompanhamento
           </SubTab>
         </div>
-        <OfflineBadge />
+        <div className="flex items-center gap-3">
+          <a
+            href={printUrl}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title={view === "mapa" ? "Imprimir Mapa Estratégico (A4 P&B)" : "Imprimir Calendário por pessoa (A4 P&B)"}
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Imprimir
+          </a>
+          <OfflineBadge />
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto min-h-0">
