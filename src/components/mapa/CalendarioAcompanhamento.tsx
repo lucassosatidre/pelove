@@ -60,6 +60,13 @@ function stripHtml(input: string | null | undefined): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+// No calendário queremos mostrar o ENTREGÁVEL (deliverable) em vez da Ação,
+// porque é o resultado palpável que cada pessoa tem que produzir.
+// Se a ação ainda não tem entregável preenchido, cai pra description como fallback.
+function displayText(a: FlatAction): string {
+  return (a.deliverable && a.deliverable.trim()) ? a.deliverable : a.description;
+}
+
 function flatten(pillars: Pillar[]): FlatAction[] {
   const out: FlatAction[] = [];
   for (const p of pillars) {
@@ -186,7 +193,7 @@ function ActionLineItem({ a }: { a: FlatAction }) {
   return (
     <div className="border border-border rounded-md p-2 bg-card hover:bg-accent/30 transition-colors">
       <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="text-xs font-medium leading-snug flex-1 min-w-0">{a.description}</div>
+        <div className="text-xs font-medium leading-snug flex-1 min-w-0">{displayText(a)}</div>
         <StatusPill value={a.computed_status} />
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
@@ -314,7 +321,7 @@ function PersonCard({ name, actions }: { name: string; actions: FlatAction[] }) 
         </div>
         {next && (
           <div className="mt-2 text-[11px] text-muted-foreground">
-            Próxima entrega: <span className="font-medium text-foreground">{fmtBR(next.deadline)}</span> — {next.description}
+            Próxima entrega: <span className="font-medium text-foreground">{fmtBR(next.deadline)}</span> — {displayText(next)}
           </div>
         )}
       </CardHeader>
@@ -421,9 +428,9 @@ function MonthCalendar({ actions }: { actions: FlatAction[] }) {
                         a.computed_status === "agendado" && "bg-purple-500/15 text-purple-700",
                         a.computed_status === "nao_iniciado" && "bg-muted text-muted-foreground",
                       )}
-                      title={`${a.description} — ${a.responsibles.join(", ") || "sem responsável"}`}
+                      title={`${displayText(a)} — ${a.responsibles.join(", ") || "sem responsável"}`}
                     >
-                      {a.description}
+                      {displayText(a)}
                     </div>
                   ))}
                   {items.length > 3 && (
@@ -486,7 +493,7 @@ function Timeline({ actions }: { actions: FlatAction[] }) {
                 <div className="text-[9px] text-muted-foreground">{relLabel}</div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium truncate">{a.description}</div>
+                <div className="text-xs font-medium truncate">{displayText(a)}</div>
                 <div className="text-[10px] text-muted-foreground truncate">
                   {a.pillar_name} · {a.responsibles.join(", ") || "sem responsável"}
                 </div>
