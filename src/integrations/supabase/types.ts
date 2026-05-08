@@ -31,6 +31,7 @@ export type Database = {
           priority_score: number | null
           reliability: number | null
           responsible: string | null
+          start_date: string | null
           status: string
           text_color: string | null
           updated_at: string | null
@@ -52,6 +53,7 @@ export type Database = {
           priority_score?: number | null
           reliability?: number | null
           responsible?: string | null
+          start_date?: string | null
           status?: string
           text_color?: string | null
           updated_at?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           priority_score?: number | null
           reliability?: number | null
           responsible?: string | null
+          start_date?: string | null
           status?: string
           text_color?: string | null
           updated_at?: string | null
@@ -87,6 +90,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      advisor_app_events: {
+        Row: {
+          id: number
+          kind: string
+          occurred_at: string
+          payload: Json | null
+          route: string | null
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: number
+          kind?: string
+          occurred_at?: string
+          payload?: Json | null
+          route?: string | null
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: number
+          kind?: string
+          occurred_at?: string
+          payload?: Json | null
+          route?: string | null
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       advisor_conversations: {
         Row: {
