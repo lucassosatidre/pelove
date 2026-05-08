@@ -677,7 +677,11 @@ export function MindMapLayout() {
                               <div className="min-w-[180px]">
                                 <InlineText
                                   value=""
-                                  onSave={async (v) => { await addObstacle(pillar.id, v); setNewObstacles(p => ({ ...p, [pillar.id]: false })); }}
+                                  onSave={async (v) => {
+                                    const newId = await addObstacle(pillar.id, v);
+                                    setNewObstacles(p => ({ ...p, [pillar.id]: false }));
+                                    if (newId && !isObstacleExpanded(newId)) toggleObstacle(newId);
+                                  }}
                                   placeholder="Descrição..."
                                   autoFocus
                                   className="text-xs"
