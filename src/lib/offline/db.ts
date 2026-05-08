@@ -57,6 +57,7 @@ export interface ActionRow {
   deliverable: string | null;
   responsible: string | null;
   deadline: string | null;
+  start_date: string | null;
   status: string;
   importance: number | null;
   urgency: number | null;
@@ -79,6 +80,16 @@ class StrategicDb extends Dexie {
   constructor() {
     super("pelove-strategic");
     this.version(1).stores({
+      vision: "id",
+      pillars: "id, display_order",
+      obstacles: "id, pillar_id, display_order",
+      actions: "id, obstacle_id, execution_order",
+      mutations: "++id, table, created_at",
+      meta: "key",
+    });
+    // v2: actions ganhou start_date — schema de índice é o mesmo, só
+    // bumpamos pra forçar reabertura limpa em clientes antigos.
+    this.version(2).stores({
       vision: "id",
       pillars: "id, display_order",
       obstacles: "id, pillar_id, display_order",

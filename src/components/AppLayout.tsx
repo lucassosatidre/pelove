@@ -2,9 +2,12 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { FloatingAdvisor } from "@/components/FloatingAdvisor";
+import { useAppEventTracker } from "@/hooks/useAppEventTracker";
 
 export function AppLayout() {
   const { session, loading } = useAuth();
+  useAppEventTracker();
 
   if (loading) {
     return (
@@ -29,6 +32,7 @@ export function AppLayout() {
           </main>
         </div>
       </div>
+      <FloatingAdvisor />
     </SidebarProvider>
   );
 }

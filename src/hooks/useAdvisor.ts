@@ -85,16 +85,30 @@ export function useMessages(conversationId: string | null) {
 }
 
 // -----------------------------------------------------
+export interface SendMessageArgs {
+  message: string;
+  conversationId?: string | null;
+  model?: string;
+  agent?: string;
+  currentRoute?: string;
+}
+
 export function useSendMessage() {
   const qc = useQueryClient();
   return useMutation<
     { conversation_id: string; text: string; usage: any; context: any },
     Error,
-    { message: string; conversationId?: string | null; model?: string }
+    SendMessageArgs
   >({
-    mutationFn: async ({ message, conversationId, model }) => {
+    mutationFn: async ({ message, conversationId, model, agent, currentRoute }) => {
       const { data, error } = await supabase.functions.invoke("advisor-chat", {
-        body: { message, conversation_id: conversationId ?? null, model },
+        body: {
+          message,
+          conversation_id: conversationId ?? null,
+          model,
+          agent,
+          current_route: currentRoute,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);

@@ -70,10 +70,16 @@ const BUBBLE_WIDTHS: Record<string, string> = {
   deliverable: "w-[200px]",
   responsible: "w-[160px]",
   deadline: "w-[140px]",
+  deadlineScheduled: "w-[170px]",
   status: "w-[140px]",
 };
 
-function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | null; isOverdue: boolean; onSave: (v: string | null) => Promise<void> }) {
+function DateField({ value, onSave, isOverdue, label }: {
+  value: string | null;
+  onSave: (v: string | null) => Promise<void>;
+  isOverdue?: boolean;
+  label?: string;
+}) {
   const [flash, setFlash] = useState(false);
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     await onSave(e.target.value || null);
@@ -81,13 +87,56 @@ function DeadlineInput({ deadline, isOverdue, onSave }: { deadline: string | nul
     setTimeout(() => setFlash(false), 500);
   };
   return (
-    <div className={cn("transition-colors duration-300 rounded flex items-center gap-1", flash && "bg-green-100")}>
-      <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
-      <input
-        type="date"
-        value={deadline ?? ""}
-        onChange={handleChange}
-        className={cn("bg-transparent text-[11px] border-none focus:outline-none focus:ring-0 cursor-pointer w-full", isOverdue && "text-destructive font-medium")}
+    <div className={cn("transition-colors duration-300 rounded", flash && "bg-green-100")}>
+      {label && (
+        <span className="block text-[8px] uppercase tracking-wider text-muted-foreground/80 leading-none mb-0.5">{label}</span>
+      )}
+      <div className="flex items-center gap-1">
+        <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+        <input
+          type="date"
+          value={value ?? ""}
+          onChange={handleChange}
+          className={cn(
+            "bg-transparent text-[11px] border-none focus:outline-none focus:ring-0 cursor-pointer w-full",
+            isOverdue && "text-destructive font-medium",
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DeadlineBubbleContent({ action, isOverdue, onUpdate }: {
+  action: Action;
+  isOverdue: boolean;
+  onUpdate: (id: string, field: string, value: any) => Promise<void>;
+}) {
+  // When status is agendado we show "Início" + "Prazo" stacked; otherwise just the deadline.
+  const isScheduled = action.status === "agendado";
+
+  if (!isScheduled) {
+    return (
+      <DateField
+        value={action.deadline}
+        onSave={(v) => onUpdate(action.id, "deadline", v)}
+        isOverdue={isOverdue}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <DateField
+        value={action.start_date}
+        onSave={(v) => onUpdate(action.id, "start_date", v)}
+        label="Início"
+      />
+      <DateField
+        value={action.deadline}
+        onSave={(v) => onUpdate(action.id, "deadline", v)}
+        isOverdue={isOverdue}
+        label="Prazo"
       />
     </div>
   );
@@ -187,8 +236,12 @@ export function ActionBubbleChain({ action, obstacleId, onUpdate, pillarColor }:
 
       <BubbleConnector color={bc} />
 
-      <Bubble label="Prazo" width={BUBBLE_WIDTHS.deadline} borderColor={bc}>
-        <DeadlineInput deadline={action.deadline} isOverdue={isOverdue} onSave={(v) => onUpdate(action.id, "deadline", v)} />
+      <Bubble
+        label={action.status === "agendado" ? "Início / Prazo" : "Prazo"}
+        width={action.status === "agendado" ? BUBBLE_WIDTHS.deadlineScheduled : BUBBLE_WIDTHS.deadline}
+        borderColor={bc}
+      >
+        <DeadlineBubbleContent action={action} isOverdue={isOverdue} onUpdate={onUpdate} />
       </Bubble>
 
       <BubbleConnector color={bc} />

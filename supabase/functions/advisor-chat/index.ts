@@ -21,6 +21,7 @@ import {
 } from "../_shared/anthropic.ts";
 import { buildAdvisorContext } from "../_shared/context.ts";
 import { ADVISOR_TOOLS, executeTool } from "../_shared/tools.ts";
+import { agentFocusPrompt, isAgentId, routeContextPrompt, DEFAULT_AGENT, type AgentId } from "../_shared/agents.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,6 +62,8 @@ serve(async (req) => {
 
     let conversationId: string | null = body?.conversation_id ?? null;
     const model = String(body?.model ?? DEFAULT_MODEL);
+    const agent: AgentId = isAgentId(body?.agent) ? body.agent : DEFAULT_AGENT;
+    const currentRoute = body?.current_route ? String(body.current_route) : null;
 
     // -----------------------------------------------------
     // Resolve / create conversation
@@ -95,9 +98,14 @@ serve(async (req) => {
     });
 
     // -----------------------------------------------------
-    // Build context
+    // Build context (mapa + KPIs + DRE + facts) and inject
+    // agent focus + current route as additional sections.
     // -----------------------------------------------------
     const ctx = await buildAdvisorContext(supabase, userId);
+    const fullSystemPrompt =
+      ctx.systemPrompt
+      + agentFocusPrompt(agent)
+      + routeContextPrompt(currentRoute);
 
     // -----------------------------------------------------
     // Load conversation history (chronological)
@@ -157,7 +165,7 @@ serve(async (req) => {
           // Mark the system block as cacheable — this lets us reuse the heavy
           // context (map + KPIs + facts) across messages without paying for it
           // on every call. Cache TTL is ~5min on the Anthropic side.
-          { type: "text", text: ctx.systemPrompt, cache_control: { type: "ephemeral" } },
+          { type: "text", text: fullSystemPrompt, cache_control: { type: "ephemeral" } },
         ],
         messages,
         tools: ADVISOR_TOOLS,

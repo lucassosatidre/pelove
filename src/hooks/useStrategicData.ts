@@ -27,6 +27,7 @@ export interface Action {
   deliverable: string | null;
   responsible: string | null;
   deadline: string | null;
+  start_date: string | null;
   status: ActionStatus;
   importance: number | null;
   urgency: number | null;

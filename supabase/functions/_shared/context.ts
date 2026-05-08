@@ -8,6 +8,7 @@ export interface BuiltContext {
   hasMapData: boolean;
   hasSalesData: boolean;
   factsCount: number;
+  hasDreData?: boolean;
 }
 
 const fmtBRL = (n: number) =>
@@ -38,7 +39,7 @@ export async function buildAdvisorContext(
   try {
     const { data: pillars } = await supabase
       .from("pillars")
-      .select("id, number, name, obstacles(id, code, description, actions(description, area, responsible, deadline, status))")
+      .select("id, number, name, obstacles(id, code, description, actions(description, area, responsible, deadline, start_date, status))")
       .order("display_order");
     if (pillars && pillars.length > 0) {
       hasMapData = true;
@@ -50,13 +51,55 @@ export async function buildAdvisorContext(
           mapParts.push(`    ${o.code}${o.description ? `: ${o.description}` : ""}`);
           const acts = (o.actions ?? []) as any[];
           for (const a of acts.slice(0, 5)) {
-            const meta = [a.area, a.responsible, a.deadline, a.status].filter(Boolean).join(" / ");
+            const dates = a.status === "agendado" && a.start_date
+              ? `início ${a.start_date} → prazo ${a.deadline ?? "?"}`
+              : (a.deadline ?? "");
+            const meta = [a.area, a.responsible, dates, a.status].filter(Boolean).join(" / ");
             mapParts.push(`      - ${a.description}${meta ? ` (${meta})` : ""}`);
           }
         }
       }
     }
   } catch { /* table missing or empty */ }
+
+  // -------------------------------------------------
+  // 1b. Acompanhamento — atrasadas e próximas 7 dias
+  // -------------------------------------------------
+  try {
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const in7 = new Date(); in7.setDate(in7.getDate() + 7);
+    const in7Str = in7.toISOString().substring(0, 10);
+
+    const { data: overdue } = await supabase
+      .from("actions")
+      .select("description, responsible, deadline, status")
+      .lt("deadline", todayStr)
+      .neq("status", "concluido")
+      .order("deadline", { ascending: true })
+      .limit(20);
+
+    const { data: upcoming } = await supabase
+      .from("actions")
+      .select("description, responsible, deadline, status")
+      .gte("deadline", todayStr)
+      .lte("deadline", in7Str)
+      .neq("status", "concluido")
+      .order("deadline", { ascending: true })
+      .limit(20);
+
+    if (overdue && overdue.length > 0) {
+      mapParts.push("\nAções ATRASADAS:");
+      for (const a of overdue as any[]) {
+        mapParts.push(`  ⚠ ${a.deadline} — ${a.description}${a.responsible ? ` (${a.responsible})` : ""}`);
+      }
+    }
+    if (upcoming && upcoming.length > 0) {
+      mapParts.push("\nAções nos próximos 7 dias:");
+      for (const a of upcoming as any[]) {
+        mapParts.push(`  · ${a.deadline} — ${a.description}${a.responsible ? ` (${a.responsible})` : ""}`);
+      }
+    }
+  } catch { /* */ }
 
   // -------------------------------------------------
   // 2. Recent business KPIs (last 30 days vs prior 30)
@@ -117,6 +160,67 @@ export async function buildAdvisorContext(
       }
     }
   } catch { /* */ }
+
+  // -------------------------------------------------
+  // 2b. DRE recente (últimos snapshots)
+  // -------------------------------------------------
+  const dreParts: string[] = [];
+  let hasDreData = false;
+  try {
+    const { data: snapshots } = await supabase
+      .from("dre_snapshots")
+      .select("period_start, period_end, payload")
+      .order("period_end", { ascending: false })
+      .limit(2);
+    if (snapshots && snapshots.length > 0) {
+      hasDreData = true;
+      dreParts.push("DRE — snapshots recentes:");
+      for (const s of snapshots as any[]) {
+        const p = s.payload ?? {};
+        const rec = Number(p.receita_total ?? p.total_revenue ?? 0);
+        const lucro = Number(p.lucro_liquido ?? p.net_income ?? 0);
+        dreParts.push(`  ${s.period_start} → ${s.period_end}: receita ${fmtBRL(rec)}, lucro ${fmtBRL(lucro)}`);
+      }
+    }
+  } catch { /* tabela pode não existir em todas as instâncias */ }
+
+  // -------------------------------------------------
+  // 2c. Saipos sync coverage
+  // -------------------------------------------------
+  const saiposParts: string[] = [];
+  try {
+    const { data: cov } = await supabase.rpc("get_data_coverage");
+    if (cov && (cov as any[]).length > 0) {
+      const r = (cov as any[])[0];
+      if (r?.first_date && r?.last_date) {
+        saiposParts.push(`Saipos: dados de ${r.first_date} até ${r.last_date}.`);
+      }
+    }
+  } catch { /* */ }
+
+  // -------------------------------------------------
+  // 2d. Atividade recente do usuário no app
+  // -------------------------------------------------
+  const activityParts: string[] = [];
+  if (userId) {
+    try {
+      const { data: events } = await supabase
+        .from("advisor_app_events")
+        .select("occurred_at, route, kind, summary")
+        .eq("user_id", userId)
+        .order("occurred_at", { ascending: false })
+        .limit(15);
+      if (events && events.length > 0) {
+        activityParts.push("Últimas atividades do Lucas no app (mais recente primeiro):");
+        for (const e of events as any[]) {
+          const ts = new Date(e.occurred_at).toLocaleString("pt-BR", {
+            dateStyle: "short", timeStyle: "short",
+          });
+          activityParts.push(`  ${ts} — ${e.summary ?? e.route ?? e.kind}`);
+        }
+      }
+    } catch { /* tabela pode não existir em deploys antigos */ }
+  }
 
   // -------------------------------------------------
   // 3. Learned facts
@@ -185,6 +289,18 @@ Suas diretrizes:
     sections.push("\n=== MÉTRICAS RECENTES ===\n(Sem dados de vendas nos últimos 30 dias. O backfill da Saipos pode estar em andamento ou a integração desativada.)");
   }
 
+  if (dreParts.length > 0) {
+    sections.push("\n=== DRE ===\n" + dreParts.join("\n"));
+  }
+
+  if (saiposParts.length > 0) {
+    sections.push("\n=== INTEGRAÇÃO ===\n" + saiposParts.join("\n"));
+  }
+
+  if (activityParts.length > 0) {
+    sections.push("\n=== ATIVIDADE RECENTE DO USUÁRIO ===\n" + activityParts.join("\n"));
+  }
+
   if (factParts.length > 0) {
     sections.push("\n=== FATOS APRENDIDOS ===\n" + factParts.join("\n"));
   }
@@ -194,5 +310,6 @@ Suas diretrizes:
     hasMapData,
     hasSalesData,
     factsCount,
+    hasDreData,
   };
 }
