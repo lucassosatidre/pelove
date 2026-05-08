@@ -277,11 +277,9 @@ function SortableObstacleCard({ obstacle, onUpdate, isExpanded, onToggle, pillar
             </span>
           )}
         </div>
-        {obstacle.actions.length > 0 && (
-          <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
-            <ChevronIcon className="h-3 w-3" />
-          </button>
-        )}
+        <button onClick={onToggle} className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-transform duration-200">
+          <ChevronIcon className="h-3 w-3" />
+        </button>
       </div>
     </div>
   );
