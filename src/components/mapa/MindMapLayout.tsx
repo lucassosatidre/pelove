@@ -346,12 +346,17 @@ export function MindMapLayout() {
     invalidate();
   }, [pillars, invalidate]);
 
-  const addObstacle = useCallback(async (pillarId: string, desc: string) => {
-    if (!desc.trim()) return;
+  const addObstacle = useCallback(async (pillarId: string, desc: string): Promise<string | null> => {
+    if (!desc.trim()) return null;
     const pillar = pillars?.find(p => p.id === pillarId);
     const next = (pillar?.obstacles.length ?? 0) + 1;
-    await supabase.from("obstacles").insert({ pillar_id: pillarId, code: "-", description: desc.trim(), display_order: next });
+    const { data } = await supabase
+      .from("obstacles")
+      .insert({ pillar_id: pillarId, code: "-", description: desc.trim(), display_order: next })
+      .select("id")
+      .single();
     invalidate();
+    return (data as any)?.id ?? null;
   }, [pillars, invalidate]);
 
   const addAction = useCallback(async (obstacleId: string, desc: string) => {
