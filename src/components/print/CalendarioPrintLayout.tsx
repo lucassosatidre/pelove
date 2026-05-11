@@ -3,11 +3,19 @@ import {
   useStrategicMap, useVision, getComputedStatus, STATUS_CONFIG, type Action, type Pillar,
 } from "@/hooks/useStrategicData";
 import { stripHtml, fmtDateBR } from "@/lib/text";
+import {
+  applyCalendarFilters,
+  EMPTY_FILTERS,
+  hasActiveFilters,
+  type CalendarFilters,
+} from "@/lib/calendarFilters";
 
 type FlatAction = Action & {
+  pillar_id: string;
   pillar_name: string;
   pillar_number: number;
   obstacle_code: string;
+  obstacle_description: string | null;
   responsibles: string[];
   computed_status: string;
 };
@@ -26,9 +34,11 @@ function flatten(pillars: Pillar[]): FlatAction[] {
           description: stripHtml(a.description),
           expected_result: a.expected_result ? stripHtml(a.expected_result) : null,
           deliverable: a.deliverable ? stripHtml(a.deliverable) : null,
+          pillar_id: p.id,
           pillar_name: stripHtml(p.name),
           pillar_number: p.number,
           obstacle_code: stripHtml(o.code),
+          obstacle_description: o.description ? stripHtml(o.description) : null,
           responsibles,
           computed_status: getComputedStatus(a),
         });
@@ -64,18 +74,37 @@ function statusOrder(s: string): number {
   }
 }
 
-export function CalendarioPrintLayout() {
+const BUCKET_LABEL: Record<CalendarFilters["bucket"], string> = {
+  all: "Todos os prazos",
+  overdue: "Atrasadas",
+  this_week: "Esta semana",
+  next_7: "Próximos 7 dias",
+  next_30: "Próximos 30 dias",
+  no_date: "Sem prazo",
+};
+
+export function CalendarioPrintLayout({
+  filters = EMPTY_FILTERS,
+}: {
+  filters?: CalendarFilters;
+} = {}) {
   const { data: vision } = useVision();
   const { data: pillars, isLoading } = useStrategicMap();
 
   const allActions = useMemo(() => (pillars ? flatten(pillars) : []), [pillars]);
+
+  // Aplica os filtros vindos da tela. Imprimir = exatamente o que está visível.
+  const filteredActions = useMemo(
+    () => applyCalendarFilters(allActions, filters),
+    [allActions, filters],
+  );
 
   // Subcategorias = pessoas. Cada pessoa vira uma seção com suas ações.
   // Ações sem responsável vão pra uma seção "Sem responsável" no final.
   const sections = useMemo(() => {
     const m = new Map<string, FlatAction[]>();
     const unassigned: FlatAction[] = [];
-    for (const a of allActions) {
+    for (const a of filteredActions) {
       if (a.responsibles.length === 0) {
         unassigned.push(a);
         continue;
@@ -90,12 +119,12 @@ export function CalendarioPrintLayout() {
       .map(([name, list]) => ({ name, actions: list }));
     if (unassigned.length > 0) arr.push({ name: "Sem responsável", actions: unassigned });
     return arr;
-  }, [allActions]);
+  }, [filteredActions]);
 
-  // Resumo geral no topo
+  // Resumo do que vai ser impresso (não o snapshot global).
   const summary = useMemo(() => {
     const s = { total: 0, atrasadas: 0, em_andamento: 0, agendadas: 0, nao_iniciadas: 0, concluidas: 0 };
-    for (const a of allActions) {
+    for (const a of filteredActions) {
       s.total++;
       if (a.computed_status === "atrasado") s.atrasadas++;
       else if (a.computed_status === "em_andamento") s.em_andamento++;
@@ -104,7 +133,25 @@ export function CalendarioPrintLayout() {
       else if (a.computed_status === "concluido") s.concluidas++;
     }
     return s;
-  }, [allActions]);
+  }, [filteredActions]);
+
+  const filtersActive = hasActiveFilters(filters);
+  const filterChips = useMemo(() => {
+    if (!filtersActive) return [] as string[];
+    const out: string[] = [];
+    if (filters.person !== "all") out.push(`Pessoa: ${filters.person}`);
+    if (filters.bucket !== "all") out.push(`Prazo: ${BUCKET_LABEL[filters.bucket]}`);
+    if (filters.pillar !== "all") {
+      const p = pillars?.find((x) => x.id === filters.pillar);
+      out.push(`Pilar: ${p ? `${p.number}. ${stripHtml(p.name)}` : filters.pillar}`);
+    }
+    if (filters.status.length > 0) {
+      const labels = filters.status.map((s) => STATUS_CONFIG[s]?.label ?? s);
+      out.push(`Status: ${labels.join(", ")}`);
+    }
+    if (filters.search.trim()) out.push(`Busca: "${filters.search.trim()}"`);
+    return out;
+  }, [filters, filtersActive, pillars]);
 
   if (isLoading) return <div className="print-loading">Carregando calendário...</div>;
 
@@ -116,7 +163,16 @@ export function CalendarioPrintLayout() {
         <h1>Calendário / Acompanhamento — Pizzaria Estrela da Ilha</h1>
         <p className="print-subtitle">
           Visão {vision?.reference_year ?? ""} · Impresso em {today}
+          {filtersActive && " · Filtrado"}
         </p>
+
+        {filterChips.length > 0 && (
+          <p className="print-filter-chips">
+            {filterChips.map((c, i) => (
+              <span key={i} className="print-filter-chip">{c}</span>
+            ))}
+          </p>
+        )}
 
         <table className="print-summary-table">
           <thead>
@@ -141,6 +197,12 @@ export function CalendarioPrintLayout() {
           </tbody>
         </table>
       </header>
+
+      {sections.length === 0 && (
+        <section className="print-person-section">
+          <p>Nenhuma ação corresponde aos filtros aplicados.</p>
+        </section>
+      )}
 
       {sections.map((sec) => {
         const counts = sec.actions.reduce<Record<string, number>>((acc, a) => {

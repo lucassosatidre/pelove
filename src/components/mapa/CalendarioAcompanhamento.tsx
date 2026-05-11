@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,13 @@ import {
   type Action,
   type Pillar,
 } from "@/hooks/useStrategicData";
+import {
+  applyCalendarFilters,
+  EMPTY_FILTERS,
+  hasActiveFilters,
+  type CalendarFilters,
+  type DateBucket,
+} from "@/lib/calendarFilters";
 
 type FlatAction = Action & {
   pillar_id: string;
@@ -27,8 +34,6 @@ type FlatAction = Action & {
   responsibles: string[];
   computed_status: string;
 };
-
-type DateBucket = "all" | "overdue" | "this_week" | "next_7" | "next_30" | "no_date";
 
 const DATE_BUCKET_LABEL: Record<DateBucket, string> = {
   all: "Todos os prazos",
@@ -78,12 +83,6 @@ function todayISO() {
   return new Date().toISOString().substring(0, 10);
 }
 
-function addDays(iso: string, days: number) {
-  const d = new Date(iso + "T00:00:00");
-  d.setDate(d.getDate() + days);
-  return d.toISOString().substring(0, 10);
-}
-
 function endOfWeekISO() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -97,59 +96,6 @@ function fmtBR(iso: string | null): string {
   if (!iso) return "—";
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
-}
-
-function applyFilters(
-  actions: FlatAction[],
-  q: {
-    status: string[];
-    bucket: DateBucket;
-    pillar: string;
-    person: string;
-    search: string;
-  },
-): FlatAction[] {
-  const t = todayISO();
-  const eow = endOfWeekISO();
-  const in7 = addDays(t, 7);
-  const in30 = addDays(t, 30);
-
-  return actions.filter((a) => {
-    if (q.status.length > 0 && !q.status.includes(a.computed_status)) return false;
-    if (q.pillar !== "all" && a.pillar_id !== q.pillar) return false;
-    if (q.person !== "all" && !a.responsibles.includes(q.person)) return false;
-
-    if (q.search.trim()) {
-      const needle = q.search.trim().toLowerCase();
-      const hay = [
-        a.description,
-        a.expected_result ?? "",
-        a.deliverable ?? "",
-        a.obstacle_description ?? "",
-        a.pillar_name,
-      ]
-        .join(" ")
-        .toLowerCase();
-      if (!hay.includes(needle)) return false;
-    }
-
-    switch (q.bucket) {
-      case "all":
-        return true;
-      case "overdue":
-        return a.computed_status === "atrasado";
-      case "this_week":
-        return !!a.deadline && a.deadline >= t && a.deadline <= eow;
-      case "next_7":
-        return !!a.deadline && a.deadline >= t && a.deadline <= in7;
-      case "next_30":
-        return !!a.deadline && a.deadline >= t && a.deadline <= in30;
-      case "no_date":
-        return !a.deadline;
-      default:
-        return true;
-    }
-  });
 }
 
 function StatusPill({ value }: { value: string }) {
@@ -486,14 +432,18 @@ function Timeline({ actions }: { actions: FlatAction[] }) {
   );
 }
 
-export function CalendarioAcompanhamento() {
+export function CalendarioAcompanhamento({
+  onFiltersChange,
+}: {
+  onFiltersChange?: (filters: CalendarFilters) => void;
+} = {}) {
   const { data: pillars, isLoading } = useStrategicMap();
 
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [bucket, setBucket] = useState<DateBucket>("all");
-  const [pillarFilter, setPillarFilter] = useState<string>("all");
-  const [personFilter, setPersonFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>(EMPTY_FILTERS.status);
+  const [bucket, setBucket] = useState<DateBucket>(EMPTY_FILTERS.bucket);
+  const [pillarFilter, setPillarFilter] = useState<string>(EMPTY_FILTERS.pillar);
+  const [personFilter, setPersonFilter] = useState<string>(EMPTY_FILTERS.person);
+  const [search, setSearch] = useState(EMPTY_FILTERS.search);
 
   const allActions = useMemo(() => (pillars ? flatten(pillars) : []), [pillars]);
 
@@ -503,9 +453,18 @@ export function CalendarioAcompanhamento() {
     return Array.from(s).sort();
   }, [allActions]);
 
+  const currentFilters = useMemo<CalendarFilters>(
+    () => ({ status: statusFilter, bucket, pillar: pillarFilter, person: personFilter, search }),
+    [statusFilter, bucket, pillarFilter, personFilter, search],
+  );
+
+  useEffect(() => {
+    onFiltersChange?.(currentFilters);
+  }, [currentFilters, onFiltersChange]);
+
   const filtered = useMemo(
-    () => applyFilters(allActions, { status: statusFilter, bucket, pillar: pillarFilter, person: personFilter, search }),
-    [allActions, statusFilter, bucket, pillarFilter, personFilter, search],
+    () => applyCalendarFilters(allActions, currentFilters),
+    [allActions, currentFilters],
   );
 
   // Summary uses unfiltered (it's the global health snapshot)
@@ -556,8 +515,7 @@ export function CalendarioAcompanhamento() {
     setSearch("");
   };
 
-  const hasActiveFilter =
-    statusFilter.length > 0 || bucket !== "all" || pillarFilter !== "all" || personFilter !== "all" || search.trim() !== "";
+  const hasActiveFilter = hasActiveFilters(currentFilters);
 
   if (isLoading) {
     return (

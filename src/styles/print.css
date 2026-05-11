@@ -102,6 +102,22 @@
   color: #444;
 }
 
+.print-filter-chips {
+  margin: 0 0 8pt 0;
+  font-size: 8.5pt;
+  color: #222;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4pt;
+}
+
+.print-filter-chip {
+  border: 1pt solid #000;
+  padding: 1pt 5pt;
+  border-radius: 8pt;
+  background: #f3f3f3;
+}
+
 .print-vision {
   border: 1pt solid #000;
   padding: 6pt 8pt;

@@ -1,11 +1,14 @@
-import { useEffect } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { CalendarioPrintLayout } from "@/components/print/CalendarioPrintLayout";
+import { filtersFromQueryString } from "@/lib/calendarFilters";
 import "@/styles/print.css";
 
 export default function CalendarioImprimir() {
   const { session, loading } = useAuth();
+  const location = useLocation();
+  const filters = useMemo(() => filtersFromQueryString(location.search), [location.search]);
 
   useEffect(() => {
     if (loading || !session) return;
@@ -27,7 +30,7 @@ export default function CalendarioImprimir() {
         <button onClick={() => window.print()}>🖨 Imprimir</button>
         <Link to="/mapa?view=calendario">Voltar</Link>
       </div>
-      <CalendarioPrintLayout />
+      <CalendarioPrintLayout filters={filters} />
     </div>
   );
 }

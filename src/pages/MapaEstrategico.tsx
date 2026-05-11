@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Map as MapIcon, CalendarRange, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MindMapLayout } from "@/components/mapa/MindMapLayout";
 import { CalendarioAcompanhamento } from "@/components/mapa/CalendarioAcompanhamento";
 import { OfflineBadge } from "@/components/mapa/OfflineBadge";
+import {
+  EMPTY_FILTERS,
+  filtersToQueryString,
+  type CalendarFilters,
+} from "@/lib/calendarFilters";
 
 type View = "mapa" | "calendario";
 
@@ -14,6 +19,9 @@ export default function MapaEstrategico() {
     return (params.get("view") as View) === "calendario" ? "calendario" : "mapa";
   });
 
+  const [calendarFilters, setCalendarFilters] = useState<CalendarFilters>(EMPTY_FILTERS);
+  const handleFiltersChange = useCallback((f: CalendarFilters) => setCalendarFilters(f), []);
+
   const switchView = (v: View) => {
     setView(v);
     const url = new URL(window.location.href);
@@ -22,7 +30,10 @@ export default function MapaEstrategico() {
     window.history.replaceState(null, "", url.toString());
   };
 
-  const printUrl = view === "mapa" ? "/mapa/imprimir" : "/mapa/calendario/imprimir";
+  const printUrl =
+    view === "mapa"
+      ? "/mapa/imprimir"
+      : `/mapa/calendario/imprimir${filtersToQueryString(calendarFilters)}`;
 
   return (
     <div className="flex flex-col h-full relative">
@@ -51,7 +62,11 @@ export default function MapaEstrategico() {
       </div>
 
       <div className="flex-1 overflow-auto min-h-0">
-        {view === "mapa" ? <MindMapLayout /> : <CalendarioAcompanhamento />}
+        {view === "mapa" ? (
+          <MindMapLayout />
+        ) : (
+          <CalendarioAcompanhamento onFiltersChange={handleFiltersChange} />
+        )}
       </div>
     </div>
   );
