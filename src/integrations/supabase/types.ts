@@ -305,6 +305,42 @@ export type Database = {
           },
         ]
       }
+      clau_tool_logs: {
+        Row: {
+          args: Json | null
+          caller: string
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: number
+          result_size: number | null
+          status: string
+          tool_name: string
+        }
+        Insert: {
+          args?: Json | null
+          caller?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: number
+          result_size?: number | null
+          status?: string
+          tool_name: string
+        }
+        Update: {
+          args?: Json | null
+          caller?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: number
+          result_size?: number | null
+          status?: string
+          tool_name?: string
+        }
+        Relationships: []
+      }
       custom_statuses: {
         Row: {
           color: string
@@ -1483,6 +1519,7 @@ export type Database = {
           schedule: string
         }[]
       }
+      run_sql_select: { Args: { p_sql: string }; Returns: Json }
       schedule_saipos_crons: {
         Args: { p_auth_key: string; p_functions_url: string }
         Returns: Json
