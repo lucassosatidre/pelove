@@ -40,33 +40,35 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        {/* Header: logo + branding centralizado */}
+        {/* Header: logo oficial clicável */}
         {!collapsed ? (
-          <div className="flex flex-col items-center px-4 pt-5 pb-3 relative border-b border-sidebar-border">
+          <div className="flex items-center justify-center px-3 h-14 relative border-b border-sidebar-border">
+            <NavLink to="/mapa" className="flex items-center justify-center h-full" aria-label="PE Love — Ir para Mapa Estratégico">
+              <img
+                src={logoPeLove}
+                alt="PE Love — Planejamento Estratégico"
+                className="h-10 w-auto object-contain"
+                style={{ mixBlendMode: "lighten" }}
+              />
+            </NavLink>
             <button
               onClick={toggle}
-              className="absolute top-2 right-2 h-7 w-7 flex items-center justify-center rounded-md text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-sidebar-accent transition-colors"
+              className="absolute top-1/2 -translate-y-1/2 right-2 h-7 w-7 flex items-center justify-center rounded-md text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-sidebar-accent transition-colors"
               title={dark ? "Modo claro" : "Modo escuro"}
             >
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <img
-              src={logoPeLove}
-              alt="PE Love"
-              className="w-[160px] object-contain"
-              style={{ mixBlendMode: "lighten" }}
-            />
-            <p className="text-sm font-bold tracking-wide text-sidebar-accent-foreground leading-tight mt-2">PE LOVE</p>
-            <p className="text-[10px] text-sidebar-foreground/60">Planejamento Estratégico</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center px-2 pt-5 pb-3 gap-2 border-b border-sidebar-border">
-            <img
-              src={logoPeLove}
-              alt="PE Love"
-              className="h-8 w-8 object-contain"
-              style={{ mixBlendMode: "lighten" }}
-            />
+          <div className="flex flex-col items-center px-2 pt-3 pb-3 gap-2 border-b border-sidebar-border">
+            <NavLink to="/mapa" aria-label="PE Love" className="flex items-center justify-center">
+              <img
+                src={logoPeLove}
+                alt="PE Love"
+                className="h-8 w-8 object-contain"
+                style={{ mixBlendMode: "lighten" }}
+              />
+            </NavLink>
             <button
               onClick={toggle}
               className="h-7 w-7 flex items-center justify-center rounded-md text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-sidebar-accent transition-colors"
