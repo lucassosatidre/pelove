@@ -1,4 +1,4 @@
-import { Map, LogOut, Sun, Moon, Database, BarChart3, Sparkles, FileSpreadsheet, FileText, Settings } from "lucide-react";
+import { Map, LogOut, Sun, Moon, Database, BarChart3, Sparkles, FileSpreadsheet, FileText, Settings, Heart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,6 +19,7 @@ import logoPeLove from "@/assets/logo-pelove.png";
 
 type Item = { title: string; url: string; icon: any; adminOnly?: boolean };
 const menuItems: Item[] = [
+  { title: "Vida", url: "/vida", icon: Heart },
   { title: "Mapa Estratégico", url: "/mapa", icon: Map },
   { title: "Dashboards", url: "/dashboards", icon: BarChart3, adminOnly: true },
   { title: "DRE", url: "/dre", icon: FileSpreadsheet, adminOnly: true },

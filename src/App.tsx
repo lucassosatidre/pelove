@@ -16,6 +16,7 @@ import Advisor from "./pages/Advisor";
 import ConfiguracoesSaipos from "./pages/ConfiguracoesSaipos";
 import Configuracoes from "./pages/Configuracoes";
 import { RoleGuard } from "./components/RoleGuard";
+import PlanejamentoPessoal from "./pages/PlanejamentoPessoal";
 import MapaImprimir from "./pages/MapaImprimir";
 import CalendarioImprimir from "./pages/CalendarioImprimir";
 import NotFound from "./pages/NotFound";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/mapa/imprimir" element={<MapaImprimir />} />
             <Route path="/mapa/calendario/imprimir" element={<CalendarioImprimir />} />
             <Route element={<AppLayout />}>
+              <Route path="/vida" element={<PlanejamentoPessoal />} />
               <Route path="/mapa" element={<MapaEstrategico />} />
               <Route path="/advisor" element={<Advisor />} />
               <Route path="/dashboards" element={<RoleGuard allowedRoles={["admin"]}><Dashboards /></RoleGuard>} />
