@@ -14,6 +14,8 @@ import DREImport from "./pages/DREImport";
 import DREv2 from "./pages/DREv2";
 import Advisor from "./pages/Advisor";
 import ConfiguracoesSaipos from "./pages/ConfiguracoesSaipos";
+import Configuracoes from "./pages/Configuracoes";
+import { RoleGuard } from "./components/RoleGuard";
 import MapaImprimir from "./pages/MapaImprimir";
 import CalendarioImprimir from "./pages/CalendarioImprimir";
 import NotFound from "./pages/NotFound";
@@ -51,12 +53,13 @@ const App = () => (
             <Route path="/mapa/calendario/imprimir" element={<CalendarioImprimir />} />
             <Route element={<AppLayout />}>
               <Route path="/mapa" element={<MapaEstrategico />} />
-              <Route path="/dashboards" element={<Dashboards />} />
-              <Route path="/dre" element={<DRE />} />
-              <Route path="/dre/import" element={<DREImport />} />
-              <Route path="/dre-v2" element={<DREv2 />} />
               <Route path="/advisor" element={<Advisor />} />
-              <Route path="/configuracoes/saipos" element={<ConfiguracoesSaipos />} />
+              <Route path="/dashboards" element={<RoleGuard allowedRoles={["admin"]}><Dashboards /></RoleGuard>} />
+              <Route path="/dre" element={<RoleGuard allowedRoles={["admin"]}><DRE /></RoleGuard>} />
+              <Route path="/dre/import" element={<RoleGuard allowedRoles={["admin"]}><DREImport /></RoleGuard>} />
+              <Route path="/dre-v2" element={<RoleGuard allowedRoles={["admin"]}><DREv2 /></RoleGuard>} />
+              <Route path="/configuracoes/saipos" element={<RoleGuard allowedRoles={["admin"]}><ConfiguracoesSaipos /></RoleGuard>} />
+              <Route path="/configuracoes" element={<RoleGuard allowedRoles={["admin"]}><Configuracoes /></RoleGuard>} />
             </Route>
             <Route path="/" element={<Navigate to="/mapa" replace />} />
             <Route path="*" element={<NotFound />} />

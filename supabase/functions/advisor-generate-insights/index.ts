@@ -172,7 +172,20 @@ ${JSON.stringify(dataSnapshot, null, 2)}`;
     // -----------------------------------------------------
     // Save insights
     // -----------------------------------------------------
+    // Pega o admin pra atribuir o insight (cron roda sem usuário)
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin")
+      .limit(1)
+      .maybeSingle();
+    const adminUserId = adminRole?.user_id;
+    if (!adminUserId) {
+      throw new Error("Nenhum admin encontrado para atribuir insights");
+    }
+
     const rows = parsed.insights.slice(0, 3).map((i) => ({
+      user_id: adminUserId,
       for_date: fmtDate(yesterday),
       severity: i.severity ?? "info",
       domain: i.domain ?? "vendas",
