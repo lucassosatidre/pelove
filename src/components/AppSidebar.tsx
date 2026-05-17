@@ -42,13 +42,16 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Header: logo oficial clicável */}
         {!collapsed ? (
-          <div className="flex items-center justify-center px-3 py-3 relative border-b border-sidebar-border">
-            <NavLink to="/mapa" className="flex items-center justify-center" aria-label="PE Love — Ir para Mapa Estratégico">
+          <div className="relative flex h-28 items-center justify-center border-b border-sidebar-border px-3 py-3">
+            <NavLink
+              to="/mapa"
+              className="flex h-full w-full items-center justify-center"
+              aria-label="PE Love — Ir para Mapa Estratégico"
+            >
               <img
                 src={logoPeLove}
                 alt="PE Love — Planejamento Estratégico"
-                className="w-[150px] h-auto object-contain"
-                style={{ mixBlendMode: "lighten" }}
+                className="block h-20 w-40 object-contain"
               />
             </NavLink>
             <button
@@ -60,13 +63,12 @@ export function AppSidebar() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center px-2 pt-3 pb-3 gap-2 border-b border-sidebar-border">
+          <div className="flex flex-col items-center gap-2 border-b border-sidebar-border px-2 pb-3 pt-3">
             <NavLink to="/mapa" aria-label="PE Love" className="flex items-center justify-center">
               <img
                 src={logoPeLove}
                 alt="PE Love"
-                className="w-10 h-auto object-contain"
-                style={{ mixBlendMode: "lighten" }}
+                className="block h-9 w-9 object-contain"
               />
             </NavLink>
             <button
