@@ -127,6 +127,7 @@ export type Database = {
       advisor_conversations: {
         Row: {
           archived: boolean
+          context_type: string
           created_at: string
           id: string
           last_message_at: string
@@ -139,6 +140,7 @@ export type Database = {
         }
         Insert: {
           archived?: boolean
+          context_type?: string
           created_at?: string
           id?: string
           last_message_at?: string
@@ -151,6 +153,7 @@ export type Database = {
         }
         Update: {
           archived?: boolean
+          context_type?: string
           created_at?: string
           id?: string
           last_message_at?: string
@@ -166,6 +169,7 @@ export type Database = {
       advisor_facts: {
         Row: {
           confidence: number | null
+          context_type: string
           created_at: string
           fact: string
           id: string
@@ -177,6 +181,7 @@ export type Database = {
         }
         Insert: {
           confidence?: number | null
+          context_type?: string
           created_at?: string
           fact: string
           id?: string
@@ -188,6 +193,7 @@ export type Database = {
         }
         Update: {
           confidence?: number | null
+          context_type?: string
           created_at?: string
           fact?: string
           id?: string
@@ -210,6 +216,7 @@ export type Database = {
       advisor_insights: {
         Row: {
           body: string
+          context_type: string
           created_at: string
           dismissed: boolean
           dismissed_at: string | null
@@ -225,6 +232,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          context_type?: string
           created_at?: string
           dismissed?: boolean
           dismissed_at?: string | null
@@ -240,6 +248,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          context_type?: string
           created_at?: string
           dismissed?: boolean
           dismissed_at?: string | null
@@ -458,6 +467,150 @@ export type Database = {
         }
         Relationships: []
       }
+      life_actions: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          display_order: number
+          id: string
+          mapped_to_strategic_action_id: string | null
+          obstacle_id: string | null
+          pillar_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          display_order?: number
+          id?: string
+          mapped_to_strategic_action_id?: string | null
+          obstacle_id?: string | null
+          pillar_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          display_order?: number
+          id?: string
+          mapped_to_strategic_action_id?: string | null
+          obstacle_id?: string | null
+          pillar_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "life_actions_mapped_to_strategic_action_id_fkey"
+            columns: ["mapped_to_strategic_action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "life_actions_obstacle_id_fkey"
+            columns: ["obstacle_id"]
+            isOneToOne: false
+            referencedRelation: "life_obstacles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "life_actions_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "life_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      life_obstacles: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          pillar_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          pillar_id: string
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          pillar_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "life_obstacles_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "life_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      life_pillars: {
+        Row: {
+          created_at: string
+          display_order: number
+          horizon_years: number
+          icon: string | null
+          id: string
+          is_custom: boolean
+          name: string
+          priority: number | null
+          updated_at: string
+          user_id: string
+          vision_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          horizon_years?: number
+          icon?: string | null
+          id?: string
+          is_custom?: boolean
+          name: string
+          priority?: number | null
+          updated_at?: string
+          user_id?: string
+          vision_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          horizon_years?: number
+          icon?: string | null
+          id?: string
+          is_custom?: boolean
+          name?: string
+          priority?: number | null
+          updated_at?: string
+          user_id?: string
+          vision_text?: string | null
+        }
+        Relationships: []
+      }
       obstacles: {
         Row: {
           bg_color: string | null
@@ -507,6 +660,131 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personal_milestones: {
+        Row: {
+          created_at: string
+          display_order: number
+          horizon_years: number | null
+          id: string
+          label: string
+          pillar_id: string | null
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          horizon_years?: number | null
+          id?: string
+          label: string
+          pillar_id?: string | null
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          horizon_years?: number | null
+          id?: string
+          label?: string
+          pillar_id?: string | null
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_milestones_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "life_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_people: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          importance: number | null
+          name: string
+          needs_alignment: boolean
+          notes: string | null
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          importance?: number | null
+          name: string
+          needs_alignment?: boolean
+          notes?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          importance?: number | null
+          name?: string
+          needs_alignment?: boolean
+          notes?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      personal_profile: {
+        Row: {
+          age: number | null
+          created_at: string
+          drains: string | null
+          energizes: string | null
+          last_review_at: string | null
+          life_marker: string | null
+          updated_at: string
+          user_id: string
+          values: Json
+          wizard_completed: boolean
+          wizard_step: number
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          drains?: string | null
+          energizes?: string | null
+          last_review_at?: string | null
+          life_marker?: string | null
+          updated_at?: string
+          user_id?: string
+          values?: Json
+          wizard_completed?: boolean
+          wizard_step?: number
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          drains?: string | null
+          energizes?: string | null
+          last_review_at?: string | null
+          life_marker?: string | null
+          updated_at?: string
+          user_id?: string
+          values?: Json
+          wizard_completed?: boolean
+          wizard_step?: number
+        }
+        Relationships: []
       }
       pillars: {
         Row: {
