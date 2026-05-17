@@ -36,6 +36,7 @@ export type Database = {
           text_color: string | null
           updated_at: string | null
           urgency: number | null
+          user_id: string
         }
         Insert: {
           area?: string | null
@@ -58,6 +59,7 @@ export type Database = {
           text_color?: string | null
           updated_at?: string | null
           urgency?: number | null
+          user_id?: string
         }
         Update: {
           area?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           text_color?: string | null
           updated_at?: string | null
           urgency?: number | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -352,6 +355,7 @@ export type Database = {
           id: string
           is_default: boolean
           label: string
+          user_id: string
           value: string
         }
         Insert: {
@@ -361,6 +365,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           label: string
+          user_id?: string
           value: string
         }
         Update: {
@@ -370,6 +375,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           label?: string
+          user_id?: string
           value?: string
         }
         Relationships: []
@@ -464,6 +470,7 @@ export type Database = {
           pillar_id: string
           text_color: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           bg_color?: string | null
@@ -476,6 +483,7 @@ export type Database = {
           pillar_id: string
           text_color?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Update: {
           bg_color?: string | null
@@ -488,6 +496,7 @@ export type Database = {
           pillar_id?: string
           text_color?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -510,6 +519,7 @@ export type Database = {
           number: number
           text_color: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           bg_color?: string | null
@@ -521,6 +531,7 @@ export type Database = {
           number: number
           text_color?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Update: {
           bg_color?: string | null
@@ -532,6 +543,7 @@ export type Database = {
           number?: number
           text_color?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1163,6 +1175,7 @@ export type Database = {
           reference_year: number
           text: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -1170,6 +1183,7 @@ export type Database = {
           reference_year?: number
           text: string
           updated_at?: string | null
+          user_id?: string
         }
         Update: {
           created_at?: string | null
@@ -1177,6 +1191,7 @@ export type Database = {
           reference_year?: number
           text?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
