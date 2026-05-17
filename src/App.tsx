@@ -16,6 +16,7 @@ import Advisor from "./pages/Advisor";
 import ConfiguracoesSaipos from "./pages/ConfiguracoesSaipos";
 import Configuracoes from "./pages/Configuracoes";
 import { RoleGuard } from "./components/RoleGuard";
+import PlanejamentoPessoal from "./pages/PlanejamentoPessoal";
 import MapaImprimir from "./pages/MapaImprimir";
 import CalendarioImprimir from "./pages/CalendarioImprimir";
 import NotFound from "./pages/NotFound";
