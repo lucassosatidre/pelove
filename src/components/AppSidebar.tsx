@@ -1,7 +1,8 @@
-import { Map, LogOut, Sun, Moon, Database, BarChart3, Sparkles, FileSpreadsheet, FileText } from "lucide-react";
+import { Map, LogOut, Sun, Moon, Database, BarChart3, Sparkles, FileSpreadsheet, FileText, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -16,13 +17,15 @@ import {
 } from "@/components/ui/sidebar";
 import logoPeLove from "@/assets/logo-pelove.png";
 
-const menuItems = [
+type Item = { title: string; url: string; icon: any; adminOnly?: boolean };
+const menuItems: Item[] = [
   { title: "Mapa Estratégico", url: "/mapa", icon: Map },
-  { title: "Dashboards", url: "/dashboards", icon: BarChart3 },
-  { title: "DRE", url: "/dre", icon: FileSpreadsheet },
-  { title: "DRE v2", url: "/dre-v2", icon: FileText },
+  { title: "Dashboards", url: "/dashboards", icon: BarChart3, adminOnly: true },
+  { title: "DRE", url: "/dre", icon: FileSpreadsheet, adminOnly: true },
+  { title: "DRE v2", url: "/dre-v2", icon: FileText, adminOnly: true },
   { title: "Advisor", url: "/advisor", icon: Sparkles },
-  { title: "Integração Saipos", url: "/configuracoes/saipos", icon: Database },
+  { title: "Integração Saipos", url: "/configuracoes/saipos", icon: Database, adminOnly: true },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -30,7 +33,9 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { profile, signOut } = useAuth();
   const { dark, toggle } = useTheme();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const visibleItems = menuItems.filter((i) => !i.adminOnly || isAdmin);
 
   const handleLogout = async () => {
     await signOut();
@@ -84,7 +89,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
