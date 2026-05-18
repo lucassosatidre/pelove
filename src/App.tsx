@@ -21,6 +21,7 @@ import MapaImprimir from "./pages/MapaImprimir";
 import CalendarioImprimir from "./pages/CalendarioImprimir";
 import NotFound from "./pages/NotFound";
 import { startSyncEngine, onMutationChange } from "@/lib/offline/sync";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ function OfflineSyncBoot() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <OfflineSyncBoot />
+    <PWAUpdatePrompt />
     <TooltipProvider>
       <Toaster />
       <Sonner />
