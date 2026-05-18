@@ -43,6 +43,7 @@ function OfflineSyncBoot() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <OfflineSyncBoot />
+    <PWAUpdatePrompt />
     <TooltipProvider>
       <Toaster />
       <Sonner />
