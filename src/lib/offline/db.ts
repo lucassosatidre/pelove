@@ -131,43 +131,38 @@ export async function clearAllOfflineData(): Promise<void> {
   }
 }
 
-// Auth-aware cache isolation: wipe Dexie on sign-out or when the active user
-// changes between sessions on the same browser. Imported lazily to avoid a
-// circular import with the supabase client module.
+/**
+ * Reconcile the offline Dexie cache with the currently-authenticated user.
+ *
+ * Must be called by the auth provider on every onAuthStateChange + getSession,
+ * BEFORE `loading` flips to false — so protected routes don't render against
+ * stale data from a previous session on the same browser.
+ *
+ * Returns true when the cache was wiped, so the caller can also reset
+ * higher-level caches (React Query). On first boot we compare against a
+ * `user_id` stamp persisted in `db.meta` from the previous session.
+ */
 let __lastUserId: string | null | undefined = undefined;
-async function __handleAuthChange(userId: string | null) {
+export async function syncOfflineCacheToUser(userId: string | null): Promise<boolean> {
+  let wiped = false;
   if (__lastUserId === undefined) {
-    // First boot: compare with stamped user_id from previous session
     const stamped = (await db.meta.get("user_id"))?.value as string | undefined;
     __lastUserId = stamped ?? null;
     if (stamped && stamped !== userId) {
       await clearAllOfflineData();
+      wiped = true;
     }
   }
   if (__lastUserId !== userId) {
     if (__lastUserId !== null || userId === null) {
-      // User switched (or signed out) — wipe everything cached for the old user.
       await clearAllOfflineData();
+      wiped = true;
     }
     __lastUserId = userId;
   }
   if (userId) {
     await db.meta.put({ key: "user_id", value: userId });
   }
-}
-
-if (typeof window !== "undefined") {
-  import("@/integrations/supabase/client").then(({ supabase }) => {
-    supabase.auth.getSession().then(({ data }) => {
-      void __handleAuthChange(data.session?.user.id ?? null);
-    });
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        void __handleAuthChange(null);
-      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-        void __handleAuthChange(session?.user.id ?? null);
-      }
-    });
-  });
+  return wiped;
 }
 

@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { syncOfflineCacheToUser } from "@/lib/offline/db";
+import { queryClient } from "@/lib/queryClient";
+
+async function reconcileLocalCache(userId: string | null) {
+  const wiped = await syncOfflineCacheToUser(userId);
+  if (wiped) queryClient.clear();
+}
 
 interface Profile {
   id: string;
@@ -40,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        await reconcileLocalCache(session?.user?.id ?? null);
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -51,7 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await reconcileLocalCache(session?.user?.id ?? null);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
